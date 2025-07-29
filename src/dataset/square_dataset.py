@@ -42,7 +42,7 @@ class SquareDataset(Dataset):
 
         self.squares: List[Square] = []
 
-        # generate square propertiesfor each image in the dataset
+        # generate square properties for each image in the dataset
         for i in range(0, self.nb_img):
             square_size = randint(square_size_min, square_size_max)
 
@@ -82,6 +82,6 @@ class SquareDataset(Dataset):
                 i, square.y : square.y + square.s, square.x : square.x + square.s
             ] = c
 
-        mask_img[square.y : square.y + square.s, square.x : square.x + square.s] = 255
+        mask_img[square.y : square.y + square.s, square.x : square.x + square.s] = 1
 
         return square_img, mask_img
