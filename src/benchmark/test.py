@@ -3,12 +3,13 @@ import torchvision
 from torch.utils.data import DataLoader, Dataset
 
 from src.model.unet import UNetModel
-from utils.display_image_tensor import display_image_tensor
+from src.utils.display_image_tensor import display_image_tensor
 
 
 def test(device: torch.device, model: UNetModel, test_dataset: Dataset, verbose=0):
+    model.eval()
+
     with torch.no_grad():
-        model.eval()
         # test_dataset = SquareDataset(3, IMG_WIDTH, IMG_HEIGHT, 10, 20, 80)
         test_loader = DataLoader(test_dataset, 1, True)
 
