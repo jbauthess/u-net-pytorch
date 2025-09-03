@@ -2,7 +2,15 @@ from typing import Tuple
 
 import torch
 import torchvision.transforms.functional
-from torch.nn import Conv2d, ConvTranspose2d, MaxPool2d, Module, ReLU, Sequential
+from torch.nn import (
+    BatchNorm2d,
+    Conv2d,
+    ConvTranspose2d,
+    MaxPool2d,
+    Module,
+    ReLU,
+    Sequential,
+)
 
 CONV_KERNEL_SIZE = (3, 3)
 
@@ -22,8 +30,10 @@ def create_convolutional_block(
     """
     return Sequential(
         Conv2d(nb_in_channels, nb_out_channels, conv_kernel_size, stride=1, padding=0),
+        # BatchNorm2d(nb_out_channels),
         ReLU(inplace=False),
         Conv2d(nb_out_channels, nb_out_channels, conv_kernel_size, stride=1, padding=0),
+        # BatchNorm2d(nb_out_channels),
         ReLU(inplace=False),
     )
 
@@ -44,8 +54,8 @@ def create_downsampling_block(nb_in_channels: int, nb_out_channels: int) -> Sequ
     # a rectified linear unit (ReLU) and a 2x2 max pooling operation with stride for downsampling. At each downsampling step the number of feature
     # channels is doubled
     return Sequential(
-        MaxPool2d((2, 2), 2),
         create_convolutional_block(nb_in_channels, CONV_KERNEL_SIZE, nb_out_channels),
+        MaxPool2d((2, 2), 2),
     )
 
 
@@ -77,7 +87,7 @@ class UpsamplingBlock(Module):
         # input is CHW
         # The cropping is necessary due to the loss of border pixels in every convolution.
         crop = torchvision.transforms.functional.center_crop(
-            contractive_feature_map, [x.size(2), x.size(3)]
+            contractive_feature_map, [x.shape[2], x.shape[3]]
         )
         x = torch.cat([crop, x], dim=1)
         return self.conv(x)
