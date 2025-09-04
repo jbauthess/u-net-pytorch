@@ -48,3 +48,6 @@ class UNetModel(torch.nn.Module):
 
         # predicts probability maps, one per class
         return self.out(x)
+
+    def get_nb_classes(self) -> int:
+        return self.out.out_channels

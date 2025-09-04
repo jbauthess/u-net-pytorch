@@ -3,7 +3,7 @@ from logging import getLogger
 
 import torch
 import torchvision
-from torch import nn, optim
+from torch import optim
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
 
@@ -37,10 +37,10 @@ def train(
     writer = SummaryWriter()
     images, _ = next(iter(train_loader))
 
-    # this line fails when using center_crop in the model for an unclear reason
+    # the add_graph(...) line fails when using center_crop of the model for an unclear reason
     # it yields "TypeError: type Tensor doesn't define __round__ method"
     # It works when removing center_crop operation of the model architecture...
-    # writer.add_graph(model, images)
+    writer.add_graph(model, images)
     grid = torchvision.utils.make_grid(images)
     writer.add_image("images", grid, 0)
 
@@ -49,12 +49,22 @@ def train(
     # move tensors to selected device
     logger.info("build model")
     model = model.to(device, dtype=torch.float32)
+
+    # init layer weights
+    model.apply(init_weights)
+
     # use cross-entropy loss
-    logger.info("initialize loss and optimizer")
-    loss_estimator = nn.BCEWithLogitsLoss()  # nn.CrossEntropyLoss()
+    logger.info(
+        f"initialize loss and optimizer for a model predicting {model.get_nb_classes()} classes"
+    )
+    loss_estimator = (
+        torch.nn.BCEWithLogitsLoss()
+        if model.get_nb_classes() == 1
+        else torch.nn.CrossEntropyLoss()
+    )
     # use Adam optimizer
-    optimizer = optim.SGD(model.parameters(), lr=hyperparameters.lr, momentum=0.9)
-    # optimizer = optim.Adam(model.parameters(), lr=hyperparameters.lr)
+    # optimizer = optim.SGD(model.parameters(), lr=hyperparameters.lr, momentum=0.9)
+    optimizer = optim.Adam(model.parameters(), lr=hyperparameters.lr)
 
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.1, patience=5
@@ -151,3 +161,21 @@ def compute_loss(device, model, loss_estimator, images, masks):
     resized_masks = resized_masks.unsqueeze(1).to(device)  # to(torch.long)
     loss = loss_estimator(outputs, resized_masks)
     return loss
+
+
+def init_weights(module):
+    """Function used to initialize the weights of the network different layers"""
+    if isinstance(module, (torch.nn.Conv2d, torch.nn.ConvTranspose2d)):
+        # He / Kaiming (good for ReLU)
+        torch.nn.init.kaiming_normal_(
+            module.weight, mode="fan_out", nonlinearity="relu"
+        )
+        # If you wanted Xavier instead, uncomment the line below:
+        # nn.init.xavier_normal_(module.weight)
+
+        if module.bias is not None:
+            torch.nn.init.constant_(module.bias, 0)
+
+    elif isinstance(module, torch.nn.BatchNorm2d):
+        torch.nn.init.constant_(module.weight, 1)
+        torch.nn.init.constant_(module.bias, 0)

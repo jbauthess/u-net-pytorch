@@ -1,9 +1,7 @@
 from typing import Tuple
 
 import torch
-import torchvision.transforms.functional
 from torch.nn import (
-    BatchNorm2d,
     Conv2d,
     ConvTranspose2d,
     MaxPool2d,
@@ -29,10 +27,24 @@ def create_convolutional_block(
         _type_: _description_
     """
     return Sequential(
-        Conv2d(nb_in_channels, nb_out_channels, conv_kernel_size, stride=1, padding=0),
+        Conv2d(
+            nb_in_channels,
+            nb_out_channels,
+            conv_kernel_size,
+            stride=1,
+            padding=1,  # use "same" padding
+            bias=False,
+        ),
         # BatchNorm2d(nb_out_channels),
         ReLU(inplace=False),
-        Conv2d(nb_out_channels, nb_out_channels, conv_kernel_size, stride=1, padding=0),
+        Conv2d(
+            nb_out_channels,
+            nb_out_channels,
+            conv_kernel_size,
+            stride=1,
+            padding=1,
+            bias=False,
+        ),
         # BatchNorm2d(nb_out_channels),
         ReLU(inplace=False),
     )
@@ -71,7 +83,8 @@ class UpsamplingBlock(Module):
 
     def __init__(self, nb_in_channels, nb_out_channels):
         super(UpsamplingBlock, self).__init__()
-        # define block corresponding to the contracting path
+        # define block corresponding to the upsampling path
+        # halve the channel dimension while up‑sampling
         self.up = ConvTranspose2d(
             nb_in_channels, nb_in_channels // 2, kernel_size=2, stride=2
         )
@@ -84,12 +97,15 @@ class UpsamplingBlock(Module):
         number of feature channels, a concatenation with the correspondingly cropped feature map from the contracting path, and two 3x3 convolutions,
         each followed by a ReLU"""
         x = self.up(x)
-        # input is CHW
-        # The cropping is necessary due to the loss of border pixels in every convolution.
-        crop = torchvision.transforms.functional.center_crop(
-            contractive_feature_map, [x.shape[2], x.shape[3]]
-        )
-        x = torch.cat([crop, x], dim=1)
+
+        # While cropping was used in the original paper, no croppong is now required because of the use of "same" padding
+        # in the convolutional block
+        # # input is CHW
+        # # The cropping is necessary due to the loss of border pixels in every convolution.
+        # crop = torchvision.transforms.functional.center_crop(
+        #     contractive_feature_map, [x.shape[2], x.shape[3]]
+        # )
+        x = torch.cat([contractive_feature_map, x], dim=1)
         return self.conv(x)
 
 
