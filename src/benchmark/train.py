@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from logging import getLogger
+from pathlib import Path
 
 import torch
 import torchvision
@@ -15,6 +16,7 @@ class HyperParameters:
     nb_epochs: int
     batch_size: int
     lr: float
+    init_weights_path: Path | None
 
 
 def train(
@@ -23,6 +25,7 @@ def train(
     train_dataset: Dataset,
     validation_dataset: Dataset,
     hyperparameters: HyperParameters,
+    model_save_path: Path,
 ):
     logger = getLogger()
 
@@ -46,12 +49,19 @@ def train(
 
     writer.flush()
 
+    # init model layer weights
+    if hyperparameters.init_weights_path is None:
+        # No provided weights -> init layer weights using default iniitialization strategy
+        logger.info("Init model weights using the default initialization strategy")
+        model.apply(init_weights)
+    else:
+        logger.info("Init model weights using provided weights")
+        checkpoint = torch.load(hyperparameters.init_weights_path, map_location=device)
+        model.load_state_dict(checkpoint)
+
     # move tensors to selected device
     logger.info("build model")
     model = model.to(device, dtype=torch.float32)
-
-    # init layer weights
-    model.apply(init_weights)
 
     # use cross-entropy loss
     logger.info(
@@ -116,6 +126,9 @@ def train(
         logger.info(f"Epoch {epoch}, Learning Rate: {optimizer.param_groups[0]['lr']}")
 
     writer.close()
+
+    # save trained model weights
+    torch.save(model.state_dict(), model_save_path)
 
 
 def train_one_epoch(device, model, loss_estimator, optimizer, train_loader):
