@@ -16,12 +16,12 @@ class HyperParameters:
     nb_epochs: int
     batch_size: int
     lr: float
-    init_weights_path: Path | None
 
 
 def train(
     device: torch.device,
     model: UNetModel,
+    init_weights_path: Path | None,
     train_dataset: Dataset,
     validation_dataset: Dataset,
     hyperparameters: HyperParameters,
@@ -50,13 +50,13 @@ def train(
     writer.flush()
 
     # init model layer weights
-    if hyperparameters.init_weights_path is None:
+    if init_weights_path is None:
         # No provided weights -> init layer weights using default iniitialization strategy
         logger.info("Init model weights using the default initialization strategy")
         model.apply(init_weights)
     else:
-        logger.info("Init model weights using provided weights")
-        checkpoint = torch.load(hyperparameters.init_weights_path, map_location=device)
+        logger.info("Init model weights using provided weights : {init_weights_path}")
+        checkpoint = torch.load(init_weights_path, map_location=device)
         model.load_state_dict(checkpoint)
 
     # move tensors to selected device
