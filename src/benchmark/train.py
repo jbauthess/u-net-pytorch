@@ -55,12 +55,11 @@ def train(
         logger.info("Init model weights using the default initialization strategy")
         model.apply(init_weights)
     else:
-        logger.info("Init model weights using provided weights : {init_weights_path}")
-        checkpoint = torch.load(init_weights_path, map_location=device)
+        logger.info(f"Init model weights using provided weights : {init_weights_path}")
+        checkpoint = torch.load(init_weights_path, map_location='cpu')
         model.load_state_dict(checkpoint)
 
     # move tensors to selected device
-    logger.info("build model")
     model = model.to(device, dtype=torch.float32)
 
     # use cross-entropy loss
@@ -171,7 +170,8 @@ def compute_loss(device, model, loss_estimator, images, masks):
         outputs.shape[2:],
         torchvision.transforms.InterpolationMode.NEAREST,
     )
-    resized_masks = resized_masks.unsqueeze(1).to(device)  # to(torch.long)
+
+    resized_masks = resized_masks.to(device)  # to(torch.long)
     loss = loss_estimator(outputs, resized_masks)
     return loss
 

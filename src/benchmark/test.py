@@ -3,7 +3,7 @@ import torchvision
 from torch.utils.data import DataLoader, Dataset
 
 from src.model.unet import UNetModel
-from src.utils.display_image_tensor import display_image_tensor
+from src.utils.display_image_tensor import display_image_tensor, display_mask_tensor
 
 
 def test(device: torch.device, model: UNetModel, test_dataset: Dataset, verbose=0):
@@ -30,5 +30,5 @@ def test(device: torch.device, model: UNetModel, test_dataset: Dataset, verbose=
 
             # display predicted mask?
             if verbose:
-                display_image_tensor(images[0].to("cpu"))
-                display_image_tensor(resized_mask[0].to("cpu"))
+                display_image_tensor(images[0].to("cpu") * 255)
+                display_mask_tensor(resized_mask[0].to("cpu") * 255)
