@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import cv2
 
 def display_image_tensor(image_tensor: torch.Tensor) -> None:
     """display an image stored into a torch tensor"""
@@ -19,7 +18,6 @@ def display_image_tensor(image_tensor: torch.Tensor) -> None:
     plt.imshow(img, cmap="gray")
     plt.colorbar()
     plt.show()
-    cv2.waitKey()
 
 
 def display_mask_tensor(mask_tensor: torch.Tensor) -> None:
