@@ -71,6 +71,11 @@ def train(
         if model.get_nb_classes() == 1
         else torch.nn.CrossEntropyLoss()
     )
+
+    logger.info(
+        f"selected loss function {loss_estimator}"
+    )
+
     # use Adam optimizer
     # optimizer = optim.SGD(model.parameters(), lr=hyperparameters.lr, momentum=0.9)
     optimizer = optim.Adam(model.parameters(), lr=hyperparameters.lr)
@@ -172,6 +177,18 @@ def compute_loss(device, model, loss_estimator, images, masks):
     )
 
     resized_masks = resized_masks.to(device)  # to(torch.long)
+
+    # print(outputs.shape)
+    # print(resized_masks.shape)
+    # print (loss_estimator)
+
+    if resized_masks.ndim == 3 and model.get_nb_classes() == 1:  # [B,H,W]
+        # if here we are using  torch.nn.BCEWithLogitsLoss() as loss
+        # output shape is [N,1, H, W] and resized_masks shape is [N,H, W]  
+        # For some unknown reason here, torch.nn.BCEWithLogitsLoss() seem to not be able to bbroadcast
+        # resized_masks correctly...
+        resized_masks = resized_masks.unsqueeze(1) 
+
     loss = loss_estimator(outputs, resized_masks)
     return loss
 

@@ -75,13 +75,13 @@ class SquareDataset(Dataset):
         """
         square = self.squares[idx]
         square_img = torch.zeros((self.nb_channels, self.img_height, self.img_width))
-        mask_img = torch.zeros((1, self.img_height, self.img_width))
+        mask_img = torch.zeros((self.img_height, self.img_width))
 
         for i, c in enumerate(square.color):
             square_img[
                 i, square.y : square.y + square.s, square.x : square.x + square.s
             ] = c
 
-        mask_img[0, square.y : square.y + square.s, square.x : square.x + square.s] = 1
+        mask_img[square.y : square.y + square.s, square.x : square.x + square.s] = 1
 
         return square_img, mask_img

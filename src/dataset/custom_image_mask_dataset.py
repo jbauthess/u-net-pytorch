@@ -79,7 +79,6 @@ class CustomImageMaskDataset(Dataset):
         # normalize mask values 0,1,2 ...
         mask = normalize_label(np.array(flattened_mask))
 
-
         # Converts a PIL Image or numpy.ndarray (H x W x C) in the range [0, 255] to a
         # torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
         image = to_tensor(image)
