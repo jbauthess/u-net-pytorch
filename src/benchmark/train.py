@@ -8,7 +8,7 @@ from torch import optim
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
 
-from src.model.unet import UNetModel
+from src.model.semantic_segmentation_model import SemanticSegmentationModel
 
 
 @dataclass
@@ -20,7 +20,7 @@ class HyperParameters:
 
 def train(
     device: torch.device,
-    model: UNetModel,
+    model: SemanticSegmentationModel,
     init_weights_path: Path | None,
     train_dataset: Dataset,
     validation_dataset: Dataset,
@@ -135,7 +135,7 @@ def train(
     torch.save(model.state_dict(), model_save_path)
 
 
-def train_one_epoch(device, model, loss_estimator, optimizer, train_loader):
+def train_one_epoch(device, model:SemanticSegmentationModel, loss_estimator, optimizer, train_loader):
     running_loss = 0.0
     for batch_index, data in enumerate(train_loader):
         images, masks = data
@@ -150,7 +150,7 @@ def train_one_epoch(device, model, loss_estimator, optimizer, train_loader):
     return running_loss
 
 
-def train_one_batch(device, model, loss_estimator, optimizer, images, masks):
+def train_one_batch(device, model:SemanticSegmentationModel, loss_estimator, optimizer, images, masks):
     # Zero the parameter gradients
     optimizer.zero_grad()
 
@@ -165,7 +165,7 @@ def train_one_batch(device, model, loss_estimator, optimizer, images, masks):
     return running_loss
 
 
-def compute_loss(device, model, loss_estimator, images, masks):
+def compute_loss(device, model:SemanticSegmentationModel, loss_estimator, images, masks):
     # Forward pass
     outputs = model(images)
 

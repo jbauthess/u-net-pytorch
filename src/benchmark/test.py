@@ -3,7 +3,7 @@ import torch
 import torchvision
 from torch.utils.data import DataLoader, Dataset
 
-from src.model.unet import UNetModel
+from src.model.semantic_segmentation_model import SemanticSegmentationModel
 from src.utils.display_image_tensor import display_image_tensor, display_multilabel_mask_tensor, display_mask_tensor
 
 logger = logging.getLogger()
@@ -30,7 +30,7 @@ def generate_mask_from_prediction(predicted_logits:torch.Tensor, thresh:float=0.
 
     return pred_mask
 
-def test(device: torch.device, model: UNetModel, test_dataset: Dataset, verbose=0):
+def test(device: torch.device, model: SemanticSegmentationModel, test_dataset: Dataset, verbose=0):
     model.eval()
 
     with torch.no_grad():

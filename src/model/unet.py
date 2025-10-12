@@ -1,6 +1,8 @@
 import torch
 from torch.nn import Conv2d
 
+from src.model.semantic_segmentation_model import SemanticSegmentationModel
+
 from .blocks import (
     CONV_KERNEL_SIZE,
     create_convolutional_block,
@@ -9,9 +11,9 @@ from .blocks import (
 )
 
 
-class UNetModel(torch.nn.Module):
+class UNetModel(SemanticSegmentationModel):
     def __init__(self, nb_in_channels: int, nb_classes: int, base_fm_number: int = 64):
-        super(UNetModel, self).__init__()
+        super(UNetModel, self).__init__(nb_classes)
 
         # blocks corresponding to the contracting path
         self.compute_fm = create_convolutional_block(
@@ -49,5 +51,3 @@ class UNetModel(torch.nn.Module):
         # predicts probability maps, one per class
         return self.out(x)
 
-    def get_nb_classes(self) -> int:
-        return self.out.out_channels
