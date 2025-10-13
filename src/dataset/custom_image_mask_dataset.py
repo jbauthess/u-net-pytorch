@@ -104,6 +104,6 @@ if __name__ == "__main__":
     loader = DataLoader(dataset, BATCH_SIZE, True)
 
     for image, mask in loader:
-        display_image_tensor(image.squeeze())
+        display_image_tensor(image.squeeze())   # remove batch dimension
         display_mask_tensor(mask.squeeze())
         break
