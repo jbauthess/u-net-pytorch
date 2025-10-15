@@ -9,13 +9,19 @@ from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
 
 from src.model.semantic_segmentation_model import SemanticSegmentationModel
+from src.benchmark.early_stopping import EarlyStopping
 
+@dataclass
+class EarlyStoppingParams:
+    patience:int
+    min_delta:float
 
 @dataclass
 class HyperParameters:
     nb_epochs: int
     batch_size: int
     lr: float
+    early_stopping:EarlyStoppingParams | None = None
 
 
 def train(
@@ -25,7 +31,7 @@ def train(
     train_dataset: Dataset,
     validation_dataset: Dataset,
     hyperparameters: HyperParameters,
-    model_save_path: Path,
+    model_save_path: Path
 ):
     logger = getLogger()
 
@@ -34,6 +40,14 @@ def train(
 
     # initialize an iterable over the validation set
     val_loader = DataLoader(validation_dataset, hyperparameters.batch_size, True)
+
+    # initialise early stopping 
+    early_stopping = None
+    if hyperparameters.early_stopping:
+        early_stopping = EarlyStopping(hyperparameters.early_stopping.patience, hyperparameters.early_stopping.min_delta)
+        logger.info(f"Early stoppoing ACTIVATED : {early_stopping.patience=}, {early_stopping.min_delta=}")
+    else:
+        logger.info("Early stopping DEACTIVATED")
 
     # log info using tensorboard
     # Writer will output to ./runs/ directory by default
@@ -108,6 +122,10 @@ def train(
 
         val_loss /= len(val_loader)
 
+        stop_train_loop = False
+        if early_stopping:
+            stop_train_loop = early_stopping(val_loss) 
+
         ##
 
         ## track information using tensorboard
@@ -125,6 +143,13 @@ def train(
         logger.info(
             f"Epoch [{epoch + 1}/{hyperparameters.nb_epochs}], Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}"
         )
+
+        ## stop training if val loss does not improve
+        if stop_train_loop:
+            logger.info(
+                f"Stop training early (Early Stopping)"
+            )
+            break
 
         scheduler.step(val_loss)
         logger.info(f"Epoch {epoch}, Learning Rate: {optimizer.param_groups[0]['lr']}")
