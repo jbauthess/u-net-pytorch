@@ -1,57 +1,64 @@
-# seg_metrics.py
+"""This module contains useful metrics to evaluate a semantic segmentation model"""
+
+from typing import List
+
 import numpy as np
 
+from src.benchmark.match import MatchMaps
 
-def compute_evaluation_maps_one_label(
-    gt: np.ndarray, pred: np.ndarray, label: int
-) -> dict[str, np.ndarray]:
-    """
-    Generate pixel-wise true-positive, false-negative, false-positive
+
+class MatchResultOneLabel:
+    """store the number of pixels detected as True Positives, False Positives and False Negatives for a specific label"""
+
+    tp: int  # True Positives
+    fp: int  # False Positives
+    fn: int  # False Negatives
+    nb_pixels: int  # total number of pixels
+
+    def __init__(self) -> None:
+        self.tp = self.fp = self.fn = 0
+
+    def update(self, match_maps: MatchMaps) -> None:
+        self.tp += np.sum(match_maps.tp)
+        self.fp += np.sum(match_maps.fp)
+        self.fn += np.sum(match_maps.fn)
+
+
+class MatchResult:
+    """Matching results for all labels"""
+
+    match_per_label: List[MatchResultOneLabel]
+    nb_pixels: int
+
+    def __init__(self, nb_labels: int) -> None:
+        self.nb_pixels = 0
+        self.match_per_label = []
+
+    def updateScoreOneLabel(self, match_maps: MatchMaps, label: int) -> None:
+        if label >= len(self.match_per_label) or label < 0:
+            raise IndexError("label invalid!")
+
+        self.match_per_label[label].update(match_maps)
+
+    def update_nb_pixels(self, nb_pixels: int) -> None:
+        self.nb_pixels += nb_pixels
+
+
+def compute_pixelwise_accuracy(match_result: MatchResult) -> float:
+    """compute the accuracy
 
     Args:
-    gt (np.ndarray) : Ground-truth label image (shape: HxW or any broadcast-compatible shape).
-    pred (np.ndarray) : Predicted label image (same shape as ``gt``).
-    label (int) : the label of interest.
+        match (MatchResult): matching results as the numbers of True Positives, False Positives, and False Negatives
 
-    Returns
-    -------
-    maps : dict[str, np.ndarray]
-        Boolean masks with keys ``'TP'``, ``'FN'``, ``'FP'``
+    Returns:
+        float: accuracy
     """
+    pass
+    # tp = 0
 
-    if gt.shape != pred.shape:
-        raise ValueError("gt and pred must have identical shapes")
-
-    # detect in gt and pred pixels corresponding to the target label
-    gt_label_mask = gt == label
-    pred_label_mask = pred == label
-
-    # ------------------------------------------------------------------
-    # 1)  True postives: correct predictions for the target lalel
-    # ------------------------------------------------------------------
-    tp_mask = np.logical_and(gt_label_mask, pred_label_mask)
-
-    # ------------------------------------------------------------------
-    # 2) False positives: prediction of label at a wrong location
-    # ------------------------------------------------------------------
-    fp_mask = np.logical_and(1 - gt_label_mask, pred_label_mask)
-
-    # ------------------------------------------------------------------
-    # 3)  False Negatives – a GT label exists but the model missed it
-    # ------------------------------------------------------------------
-    fn_mask = np.logical_and(gt_label_mask, 1 - pred_label_mask)
-
-    # ------------------------------------------------------------------
-    # 4)  True Negatives – both GT and prediction are background
-    # ------------------------------------------------------------------
-    # tn_mask = np.matmul(1 - gt_label_mask, 1 - pred_label_mask)
-
-    # ------------------------------------------------------------------
-    # Pack results
-    # ------------------------------------------------------------------
-    maps = {"TP": tp_mask, "FN": fn_mask, "FP": fp_mask}
-
-    return maps
+    # for m in match_result_per_class:
+    #     tp =
+    # return (match.tp + tn) / (match.tp + match.fn + match.fp + tn)
 
 
 def _flatten_and_ignore(
@@ -70,8 +77,9 @@ def _flatten_and_ignore(
     return pred, gt
 
 
-def compute_pixelwise_accuracy(pred, gt, ignore_index=None) -> float:
+def compute_pixelwise_accuracy_ref(pred, gt, ignore_index=None) -> float:
     """Compute Pixel Accuracy (PA) :  number of valid predicted pixels / total number of pixels"""
+    # TODO(move as a reference implementation to test compute_pixelwise_accuracy() implementation in test_metrics.py)
     pred, gt = _flatten_and_ignore(pred, gt, ignore_index)
     return np.mean(pred == gt)
 

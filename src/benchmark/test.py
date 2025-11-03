@@ -1,31 +1,15 @@
 import logging
-from enum import StrEnum
 from typing import List
 
 import torch
 import torchvision
 from torch.utils.data import DataLoader, Dataset
 
-from src.benchmark.metrics import compute_pixelwise_accuracy
+from src.benchmark.report import TestMetrics
 from src.model.semantic_segmentation_model import SemanticSegmentationModel
 from src.utils.display_image_tensor import display_image_tensor, display_mask_tensor
 
 logger = logging.getLogger()
-
-
-class TestMetrics(StrEnum):
-    ACCURACY = "accuracy"
-
-
-def generate_report(gt, pred, metrics: List[TestMetrics]) -> None:
-    """generate the report corresponding to model performances"""
-    for m in metrics:
-        match m:
-            case TestMetrics.ACCURACY:
-                acc = compute_pixelwise_accuracy(gt, pred)
-                logger.info(f"GLOABL ACCURACY={acc}")
-            case _:
-                raise NotImplementedError("This metric is not available")
 
 
 def generate_mask_from_prediction(
@@ -65,6 +49,11 @@ def test(
 ):
     model.eval()
 
+    # nb_classes = model.get_nb_classes()
+    # match_per_class: List[MatchResultOneLabel] = [
+    #     MatchResultOneLabel(0, 0, 0, 0)
+    # ] * nb_classes
+
     with torch.no_grad():
         # test_dataset = SquareDataset(3, IMG_WIDTH, IMG_HEIGHT, 10, 20, 80)
         test_loader = DataLoader(test_dataset, 1, True)
@@ -82,9 +71,14 @@ def test(
                 mask, images.shape[2:], torchvision.transforms.InterpolationMode.NEAREST
             )
 
-            # compute and print matching score between generated mask with ground truth mask
+            # compute metrics
             if metrics:
-                generate_report(gt_masks.numpy(), mask.to("cpu").numpy(), metrics)
+                raise NotImplementedError("Work in progress...")
+                # compute matching per label
+                # for label, match_result in enumerate(match_per_class):
+                #     update_match_result_one_label(
+                #         match_result, gt_masks.numpy(), mask.to("cpu").numpy(), label
+                #     )
 
             # display predicted mask?
             if verbose:
@@ -92,3 +86,6 @@ def test(
                 display_mask_tensor(gt_masks[0])
                 display_mask_tensor(mask.to("cpu").squeeze(0))  # remove batch dimension
                 # display_multilabel_mask_tensor(resized_mask[0].to("cpu"))
+
+        # generate evaluation report
+        # generate_report(gt_masks.numpy(), mask.to("cpu").numpy(), metrics)
