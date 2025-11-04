@@ -13,26 +13,33 @@ class MatchResultOneLabel:
     tp: int  # True Positives
     fp: int  # False Positives
     fn: int  # False Negatives
-    nb_pixels: int  # total number of pixels
 
     def __init__(self) -> None:
-        self.tp = self.fp = self.fn = 0
+        self.tp = 0
+        self.fp = 0
+        self.fn = 0
 
     def update(self, match_maps: MatchMaps) -> None:
         self.tp += np.sum(match_maps.tp)
         self.fp += np.sum(match_maps.fp)
         self.fn += np.sum(match_maps.fn)
 
+    def __str__(self) -> str:
+        return f"(tp={self.tp}, fp={self.fp}, fn={self.fn})"
+
 
 class MatchResult:
     """Matching results for all labels"""
 
     match_per_label: List[MatchResultOneLabel]
-    nb_pixels: int
+    nb_pixels: int  # total number of pixels processed
 
     def __init__(self, nb_labels: int) -> None:
         self.nb_pixels = 0
         self.match_per_label = []
+
+        for l in range(nb_labels):
+            self.match_per_label.append(MatchResultOneLabel())
 
     def updateScoreOneLabel(self, match_maps: MatchMaps, label: int) -> None:
         if label >= len(self.match_per_label) or label < 0:
@@ -42,6 +49,14 @@ class MatchResult:
 
     def update_nb_pixels(self, nb_pixels: int) -> None:
         self.nb_pixels += nb_pixels
+
+    def __str__(self) -> str:
+        text = f"MatchResult(nb_pix = {self.nb_pixels}): "
+
+        for l, m in enumerate(self.match_per_label):
+            text += f"label {l}: {str(m)} |"
+
+        return text
 
 
 def compute_pixelwise_accuracy(match_result: MatchResult) -> float:
@@ -53,12 +68,14 @@ def compute_pixelwise_accuracy(match_result: MatchResult) -> float:
     Returns:
         float: accuracy
     """
-    pass
-    # tp = 0
+    if match_result.nb_pixels == 0:
+        raise ValueError("Invalid input match_result : no pixels processed")
 
-    # for m in match_result_per_class:
-    #     tp =
-    # return (match.tp + tn) / (match.tp + match.fn + match.fp + tn)
+    correct_matches = 0
+    for m in match_result.match_per_label:
+        correct_matches += m.tp
+
+    return correct_matches / match_result.nb_pixels
 
 
 def _flatten_and_ignore(
