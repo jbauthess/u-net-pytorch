@@ -1,5 +1,5 @@
-# u-net-pytorch
-implementation of the u-net semantic segmentation model using pytorch
+# Torch Semantic Segmentation
+The goal of this project is to implement main semantic segmentation models using pytorch and to propose tools to easily train and evaluate those models. 
 
 ## Installation
 
