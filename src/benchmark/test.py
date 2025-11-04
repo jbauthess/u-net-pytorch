@@ -2,10 +2,11 @@ import logging
 from typing import List
 
 import torch
-import torchvision
 from torch.utils.data import DataLoader, Dataset
 
-from src.benchmark.report import TestMetrics
+from src.benchmark.match import compute_match_maps_one_label
+from src.benchmark.metrics import MatchResult
+from src.benchmark.report import TestMetrics, generate_report
 from src.model.semantic_segmentation_model import SemanticSegmentationModel
 from src.utils.display_image_tensor import display_image_tensor, display_mask_tensor
 
@@ -49,43 +50,50 @@ def test(
 ):
     model.eval()
 
-    # nb_classes = model.get_nb_classes()
-    # match_per_class: List[MatchResultOneLabel] = [
-    #     MatchResultOneLabel(0, 0, 0, 0)
-    # ] * nb_classes
+    nb_classes = model.get_nb_classes()
+
+    match_result = MatchResult(nb_classes)
 
     with torch.no_grad():
-        # test_dataset = SquareDataset(3, IMG_WIDTH, IMG_HEIGHT, 10, 20, 80)
         test_loader = DataLoader(test_dataset, 1, True)
 
-        for gt_mask, data in enumerate(test_loader):
-            images, gt_masks = data
+        for _, data in enumerate(test_loader):
+            images: torch.Tensor = data[0]
+            gt_masks: torch.Tensor = data[1]
             images = images.to(device)
 
             # Forward pass
-            outputs = model(images)
+            outputs = model(images)  # dim (N, C, H, W)
 
-            mask = generate_mask_from_prediction(outputs, 0.5)
+            pred_masks = generate_mask_from_prediction(outputs, 0.5).to(
+                "cpu"
+            )  # dim (N, H, W)
 
-            resized_mask = torchvision.transforms.functional.resize(
-                mask, images.shape[2:], torchvision.transforms.InterpolationMode.NEAREST
-            )
+            # pred_masks = torchvision.transforms.functional.resize(
+            #     pred_masks,
+            #     images.shape[2:],
+            #     torchvision.transforms.InterpolationMode.NEAREST,
+            # )
 
             # compute metrics
             if metrics:
-                raise NotImplementedError("Work in progress...")
                 # compute matching per label
-                # for label, match_result in enumerate(match_per_class):
-                #     update_match_result_one_label(
-                #         match_result, gt_masks.numpy(), mask.to("cpu").numpy(), label
-                #     )
+                for label in range(nb_classes):
+                    match_maps = compute_match_maps_one_label(
+                        gt_masks.numpy(), pred_masks.numpy(), label=label
+                    )
+
+                    match_result.updateScoreOneLabel(match_maps, label)
+
+                # update the total number of pixels processed
+                match_result.update_nb_pixels(gt_masks.numel())
 
             # display predicted mask?
             if verbose:
                 display_image_tensor(images[0].to("cpu"))
                 display_mask_tensor(gt_masks[0])
-                display_mask_tensor(mask.to("cpu").squeeze(0))  # remove batch dimension
+                display_mask_tensor(pred_masks[0])  # remove batch dimension
                 # display_multilabel_mask_tensor(resized_mask[0].to("cpu"))
 
         # generate evaluation report
-        # generate_report(gt_masks.numpy(), mask.to("cpu").numpy(), metrics)
+        generate_report(match_result, metrics)

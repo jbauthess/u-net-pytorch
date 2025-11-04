@@ -46,12 +46,12 @@ def compute_match_maps_one_label(
     # ------------------------------------------------------------------
     # 2) False positives: prediction of label at a wrong location
     # ------------------------------------------------------------------
-    fp_mask = np.logical_and(1 - gt_label_mask, pred_label_mask)
+    fp_mask = np.logical_and(~gt_label_mask, pred_label_mask)
 
     # ------------------------------------------------------------------
     # 3)  False Negatives – a GT label exists but the model missed it
     # ------------------------------------------------------------------
-    fn_mask = np.logical_and(gt_label_mask, 1 - pred_label_mask)
+    fn_mask = np.logical_and(gt_label_mask, ~pred_label_mask)
 
     # ------------------------------------------------------------------
     # 4)  True Negatives – both GT and prediction are background
