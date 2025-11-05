@@ -59,11 +59,122 @@ class MatchResult:
         return text
 
 
+def compute_IoU(tp: int, fp: int, fn: int) -> float:
+    """compute Intersection over Union score
+
+    Args:
+        tp (int): number of True Positives
+        fp (int): number of False Positives
+        fn (int): number of False Negatives
+
+    Returns:
+        float: IoU Score
+    """
+    if tp + fn + fp > 0:
+        return tp / (tp + fn + fp)
+    else:
+        # label not present in ground-truth and predictions
+        if fp == 0:
+            return 1.0  # predictions agree with ground-truth
+
+        return np.nan  # 0 / 0
+
+
+def compute_per_label_IoU(match_result: MatchResult) -> List[float]:
+    """Compute the per label intersection over union scores (IoU)
+
+    Args:
+        match (MatchResult): matching results containing the numbers of True Positives, False Positives, and False Negatives
+                             for each label
+
+    Returns:
+        List[float]: list of IoU scores
+    """
+    res = []
+    for m in match_result.match_per_label:
+        res.append(compute_IoU(m.tp, m.fp, m.fn))
+
+    return res
+
+
+def compute_recall(tp: int, fn: int) -> float:
+    """compute the recall score
+
+    Args:
+        tp (int): number of True Positives
+        fn (int): number of False Negatives
+
+    Returns:
+        float: recall score
+    """
+    if tp + fn > 0:
+        return tp / (tp + fn)
+    else:
+        return np.nan  # label not present in ground-truth
+
+
+def compute_per_label_recall(match_result: MatchResult) -> List[float]:
+    """Compute the per label recall scores
+
+    Args:
+        match (MatchResult): matching results containing the numbers of True Positives, False Positives, and False Negatives
+                             for each label
+
+    Returns:
+        List[float]: list of recall scores
+    """
+    res = []
+    for m in match_result.match_per_label:
+        res.append(compute_recall(m.tp, m.fn))
+
+    return res
+
+
+def compute_precision(tp: int, fp: int) -> float:
+    """compute the precision score
+
+    Args:
+        tp (int): number of True Positives
+        fp (int): number of False Positives
+
+    Returns:
+        float: precision score
+    """
+    if tp + fp > 0:
+        return tp / (tp + fp)
+    else:
+        return np.nan  # label not present in ground-truth and pred (fp == 0, tp == 0)
+
+
+def compute_per_label_precision(match_result: MatchResult) -> List[float]:
+    """Compute the per label precision scores
+
+    Args:
+        match (MatchResult): matching results containing the numbers of True Positives, False Positives, and False Negatives
+                             for each label
+
+    Returns:
+        List[float]: list of precision scores
+    """
+    res = []
+    for m in match_result.match_per_label:
+        if m.tp + m.fp > 0:
+            res.append(m.tp / (m.tp + m.fp))
+        else:
+            # label not present in ground-truth and never predicted
+            res.append(
+                1
+            )  # 1 : because the model never predicted this label, so in that way it agrees with ground-truth
+
+    return res
+
+
 def compute_pixelwise_accuracy(match_result: MatchResult) -> float:
     """compute the accuracy
 
     Args:
-        match (MatchResult): matching results as the numbers of True Positives, False Positives, and False Negatives
+        match (MatchResult): matching results containing the numbers of True Positives, False Positives, and False Negatives
+                             for each label
 
     Returns:
         float: accuracy
@@ -78,9 +189,7 @@ def compute_pixelwise_accuracy(match_result: MatchResult) -> float:
     return correct_matches / match_result.nb_pixels
 
 
-def _flatten_and_ignore(
-    pred: np.ndarray, gt: np.ndarray, ignore_index: int | None = None
-):
+def _flatten_and_ignore(pred: np.ndarray, gt: np.ndarray, ignore_index: int | None = None):
     """
     flatten pred and gt to be 1D vectors containing valid labels
     if ignore_index is provided, it is used to detect corresponding positions in gt and filter out

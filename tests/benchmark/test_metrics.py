@@ -1,11 +1,15 @@
 import unittest
 
 import numpy as np
+import pytest
 
 from src.benchmark.metrics import (
     MatchResult,
     MatchResultOneLabel,
+    compute_IoU,
     compute_pixelwise_accuracy,
+    compute_precision,
+    compute_recall,
 )
 
 
@@ -104,5 +108,50 @@ class TestComputePixelwiseAccuracy(unittest.TestCase):
             compute_pixelwise_accuracy(match_result)
 
 
+@pytest.mark.parametrize(
+    "tp, fp, fn, expected_iou,",
+    [
+        (5, 6, 3, 5 / (5 + 6 + 3)),  # general case
+        (0, 6, 0, 0),  # no ground_truth, but some predictions
+        (0, 0, 0, 1),  # no ground_truth, no predictions
+    ],
+)
+def test_compute_IoU(tp, fp, fn, expected_iou) -> None:
+    assert compute_IoU(tp, fp, fn) == expected_iou, f"error computing IoU for {tp=}, {fp=}, {fn=}"
+
+
+@pytest.mark.parametrize(
+    "tp, fn, expected_recall,",
+    [
+        (5, 3, 5 / (5 + 3)),  # general case
+        (0, 0, np.nan),  # no ground_truth
+    ],
+)
+def test_compute_recall(tp, fn, expected_recall) -> None:
+    if np.isnan(expected_recall):
+        assert compute_recall(tp, fn) is np.nan, f"error computing recall  for {tp=}, {fn=}"
+    else:
+        assert compute_recall(tp, fn) == expected_recall, (
+            f"error computing recall  for {tp=}, {fn=}"
+        )
+
+
+@pytest.mark.parametrize(
+    "tp, fp, expected_precision,",
+    [
+        (5, 6, 5 / (5 + 6)),  # general case
+        (0, 6, 0),  # no ground_truth
+        (0, 0, np.nan),  # no ground_truth, no pred
+    ],
+)
+def test_compute_precision(tp, fp, expected_precision) -> None:
+    if expected_precision is np.nan:
+        assert compute_precision(tp, fp) is np.nan, f"error computing precision  for {tp=}, {fp=}"
+    else:
+        assert compute_precision(tp, fp) == expected_precision, (
+            f"error computing precision for {tp=}, {fn=}"
+        )
+
+
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main()
