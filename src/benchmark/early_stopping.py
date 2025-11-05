@@ -7,7 +7,7 @@ class EarlyStopping:
     training when the model's performance on a validation set stops improving.
     """
 
-    def __init__(self, patience:int=5, min_delta:float=0):
+    def __init__(self, patience: int = 5, min_delta: float = 0):
         """
         Initializes the EarlyStopping instance.
 
@@ -21,7 +21,7 @@ class EarlyStopping:
         self.best_loss = None  # Best observed value of the monitored metric.
         self.early_stop = False  # Flag indicating whether to stop training.
 
-    def __call__(self, val_loss:float):
+    def __call__(self, val_loss: float):
         """
         Updates the early stopping state based on the current validation loss.
 
@@ -45,5 +45,3 @@ class EarlyStopping:
             self.best_loss = val_loss
             self.counter = 0
         return self.early_stop
-    
-

@@ -46,7 +46,7 @@ class TestMatchResult(unittest.TestCase):
         self.assertEqual(len(match_result.match_per_label), 3)
         self.assertEqual(match_result.nb_pixels, 0)
 
-    def test_updateScoreOneLabel(self):
+    def test_update_score_one_label(self):
         """Test updating score for one label"""
         match_result = MatchResult(nb_labels=3)
         match_maps = MatchMaps(
@@ -54,7 +54,7 @@ class TestMatchResult(unittest.TestCase):
             fp=[[False, False, True], [False, False, True]],
             fn=[[True, False, False], [False, False, False]],
         )
-        match_result.updateScoreOneLabel(match_maps, label=1)
+        match_result.update_score_one_label(match_maps, label=1)
         self.assertEqual(match_result.match_per_label[1].tp, 2)
         self.assertEqual(match_result.match_per_label[1].fp, 2)
         self.assertEqual(match_result.match_per_label[1].fn, 1)
@@ -74,7 +74,7 @@ class TestMatchResult(unittest.TestCase):
             fn=[[True, False, False], [False, False, False]],
         )
         with self.assertRaises(IndexError):
-            match_result.updateScoreOneLabel(match_maps, label=4)
+            match_result.update_score_one_label(match_maps, label=4)
 
 
 class TestComputePixelwiseAccuracy(unittest.TestCase):
@@ -91,8 +91,8 @@ class TestComputePixelwiseAccuracy(unittest.TestCase):
             fp=[[True, False, False], [False, False, False]],
             fn=[[False, False, True], [False, False, False]],
         )
-        match_result.updateScoreOneLabel(match_maps_1, label=0)
-        match_result.updateScoreOneLabel(match_maps_2, label=1)
+        match_result.update_score_one_label(match_maps_1, label=0)
+        match_result.update_score_one_label(match_maps_2, label=1)
         match_result.update_nb_pixels(6)
         accuracy = compute_pixelwise_accuracy(match_result)
         self.assertAlmostEqual(accuracy, 2 / 3)

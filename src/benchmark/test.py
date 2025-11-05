@@ -16,20 +16,20 @@ logger = logging.getLogger()
 def generate_mask_from_prediction(
     predicted_logits: torch.Tensor, thresh: float = 0.7
 ) -> torch.Tensor:
-    """convert semantic segmentation model output feature maps (one feature map per class) into
-    a segmentation mask (flatten mask containing pixels with different labels, one label per class)
+    """convert semantic segmentation model output feature maps (one feature map per label) into
+    a segmentation mask (flattened mask containing pixels with different labels, one label per pixel)
     """
-    # the number of target classes corresponds to the number of channels in the predicted volume
-    nb_classes = predicted_logits.shape[1]
+    # the number of target labels corresponds to the number of channels in the predicted volume
+    nb_labels = predicted_logits.shape[1]
 
-    if nb_classes > 1:
+    if nb_labels > 1:
         # Apply softmax along the channel dimension to convert logits into probabilities
         probs = torch.softmax(predicted_logits, dim=1)  # shape: (N, C, H, W)
 
         # cancel not reliable pixels
         probs[probs < thresh] = 0
 
-        # Get predicted class per pixel
+        # Get predicted label per pixel
         pred_mask = torch.argmax(probs, dim=1)  # shape: (N, H, W)
 
     else:
@@ -50,9 +50,9 @@ def test(
 ):
     model.eval()
 
-    nb_classes = model.get_nb_classes()
+    nb_labels = model.get_nb_labels()
 
-    match_result = MatchResult(nb_classes)
+    match_result = MatchResult(nb_labels)
 
     with torch.no_grad():
         test_loader = DataLoader(test_dataset, 1, True)
@@ -78,12 +78,12 @@ def test(
             # compute metrics
             if metrics:
                 # compute matching per label
-                for label in range(nb_classes):
+                for label in range(nb_labels):
                     match_maps = compute_match_maps_one_label(
                         gt_masks.numpy(), pred_masks.numpy(), label=label
                     )
 
-                    match_result.updateScoreOneLabel(match_maps, label)
+                    match_result.update_score_one_label(match_maps, label)
 
                 # update the total number of pixels processed
                 match_result.update_nb_pixels(gt_masks.numel())

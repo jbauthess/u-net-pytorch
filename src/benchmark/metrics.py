@@ -41,7 +41,7 @@ class MatchResult:
         for l in range(nb_labels):
             self.match_per_label.append(MatchResultOneLabel())
 
-    def updateScoreOneLabel(self, match_maps: MatchMaps, label: int) -> None:
+    def update_score_one_label(self, match_maps: MatchMaps, label: int) -> None:
         if label >= len(self.match_per_label) or label < 0:
             raise IndexError("label invalid!")
 

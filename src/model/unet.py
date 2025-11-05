@@ -13,16 +13,16 @@ from .blocks import (
 
 
 class UNetModel(SemanticSegmentationModel):
-    def __init__(self, nb_in_channels: int, nb_classes: int, base_fm_number: int = 64):
+    def __init__(self, nb_in_channels: int, nb_labels: int, base_fm_number: int = 64):
         """intitialize UNet model architecture blocks
 
         Args:
             nb_in_channels (int): number of channels in the input image passed to the model
-            nb_classes (int): number of labels the model is able to predict
+            nb_labels (int): number of labels the model is able to predict
             base_fm_number (int, optional): base number used to define the number of feature maps in each layer of the model.
                                             The larger this number, the larger the number of model parameters and memory / computation load
         """
-        super(UNetModel, self).__init__(nb_classes)
+        super(UNetModel, self).__init__(nb_labels)
 
         # blocks corresponding to the contracting path
         self.compute_fm = create_convolutional_block(
@@ -41,7 +41,7 @@ class UNetModel(SemanticSegmentationModel):
         self.up4 = create_upsampling_block(base_fm_number * 2, base_fm_number)
 
         # prediction
-        self.out = Conv2d(base_fm_number, nb_classes, (1, 1), 1, padding=0)
+        self.out = Conv2d(base_fm_number, nb_labels, (1, 1), 1, padding=0)
 
     def forward(self, x: Tensor) -> Tensor:
         """Apply Unet model on a batch of images
@@ -51,7 +51,7 @@ class UNetModel(SemanticSegmentationModel):
 
         Returns:
             Tensor: output tesor. Same resolution as the input image passed to the model. The number of channels of the output tensor corresponds to
-            the number of label the model predicts (nb_classes). Each channel (feature map) of the output tensor corresponds to a label.
+            the number of label the model predicts (nb_labels). Each channel (feature map) of the output tensor corresponds to a label.
             Each pixel of a channel stores a score homogeneous to the probability the pixel corresponds to the label
         """
 
@@ -68,5 +68,5 @@ class UNetModel(SemanticSegmentationModel):
         x = self.up3(x, x1)
         x = self.up4(x, x0)
 
-        # predicts probability maps, one per class
+        # predicts probability maps, one per label
         return self.out(x)

@@ -8,20 +8,22 @@ from torch import optim
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
 
-from src.model.semantic_segmentation_model import SemanticSegmentationModel
 from src.benchmark.early_stopping import EarlyStopping
+from src.model.semantic_segmentation_model import SemanticSegmentationModel
+
 
 @dataclass
 class EarlyStoppingParams:
-    patience:int
-    min_delta:float
+    patience: int
+    min_delta: float
+
 
 @dataclass
 class HyperParameters:
     nb_epochs: int
     batch_size: int
     lr: float
-    early_stopping:EarlyStoppingParams | None = None
+    early_stopping: EarlyStoppingParams | None = None
 
 
 def train(
@@ -31,7 +33,7 @@ def train(
     train_dataset: Dataset,
     validation_dataset: Dataset,
     hyperparameters: HyperParameters,
-    model_save_path: Path
+    model_save_path: Path,
 ):
     logger = getLogger()
 
@@ -41,11 +43,16 @@ def train(
     # initialize an iterable over the validation set
     val_loader = DataLoader(validation_dataset, hyperparameters.batch_size, True)
 
-    # initialise early stopping 
+    # initialise early stopping
     early_stopping = None
     if hyperparameters.early_stopping:
-        early_stopping = EarlyStopping(hyperparameters.early_stopping.patience, hyperparameters.early_stopping.min_delta)
-        logger.info(f"Early stoppoing ACTIVATED : {early_stopping.patience=}, {early_stopping.min_delta=}")
+        early_stopping = EarlyStopping(
+            hyperparameters.early_stopping.patience,
+            hyperparameters.early_stopping.min_delta,
+        )
+        logger.info(
+            f"Early stoppoing ACTIVATED : {early_stopping.patience=}, {early_stopping.min_delta=}"
+        )
     else:
         logger.info("Early stopping DEACTIVATED")
 
@@ -70,7 +77,7 @@ def train(
         model.apply(init_weights)
     else:
         logger.info(f"Init model weights using provided weights : {init_weights_path}")
-        checkpoint = torch.load(init_weights_path, map_location='cpu')
+        checkpoint = torch.load(init_weights_path, map_location="cpu")
         model.load_state_dict(checkpoint)
 
     # move tensors to selected device
@@ -78,17 +85,15 @@ def train(
 
     # use cross-entropy loss
     logger.info(
-        f"initialize loss and optimizer for a model predicting {model.get_nb_classes()} classes"
+        f"initialize loss and optimizer for a model predicting {model.get_nb_labels()} labels"
     )
     loss_estimator = (
         torch.nn.BCEWithLogitsLoss()
-        if model.get_nb_classes() == 1
+        if model.get_nb_labels() == 1
         else torch.nn.CrossEntropyLoss()
     )
 
-    logger.info(
-        f"selected loss function {loss_estimator}"
-    )
+    logger.info(f"selected loss function {loss_estimator}")
 
     # use Adam optimizer
     # optimizer = optim.SGD(model.parameters(), lr=hyperparameters.lr, momentum=0.9)
@@ -124,7 +129,7 @@ def train(
 
         stop_train_loop = False
         if early_stopping:
-            stop_train_loop = early_stopping(val_loss) 
+            stop_train_loop = early_stopping(val_loss)
 
         ##
 
@@ -146,9 +151,7 @@ def train(
 
         ## stop training if val loss does not improve
         if stop_train_loop:
-            logger.info(
-                f"Stop training early (Early Stopping)"
-            )
+            logger.info("Stop training early (Early Stopping)")
             break
 
         scheduler.step(val_loss)
@@ -160,7 +163,9 @@ def train(
     torch.save(model.state_dict(), model_save_path)
 
 
-def train_one_epoch(device, model:SemanticSegmentationModel, loss_estimator, optimizer, train_loader):
+def train_one_epoch(
+    device, model: SemanticSegmentationModel, loss_estimator, optimizer, train_loader
+):
     running_loss = 0.0
     for batch_index, data in enumerate(train_loader):
         images, masks = data
@@ -175,7 +180,9 @@ def train_one_epoch(device, model:SemanticSegmentationModel, loss_estimator, opt
     return running_loss
 
 
-def train_one_batch(device, model:SemanticSegmentationModel, loss_estimator, optimizer, images, masks):
+def train_one_batch(
+    device, model: SemanticSegmentationModel, loss_estimator, optimizer, images, masks
+):
     # Zero the parameter gradients
     optimizer.zero_grad()
 
@@ -190,7 +197,9 @@ def train_one_batch(device, model:SemanticSegmentationModel, loss_estimator, opt
     return running_loss
 
 
-def compute_loss(device, model:SemanticSegmentationModel, loss_estimator, images, masks):
+def compute_loss(
+    device, model: SemanticSegmentationModel, loss_estimator, images, masks
+):
     # Forward pass
     outputs = model(images)
 
@@ -207,12 +216,12 @@ def compute_loss(device, model:SemanticSegmentationModel, loss_estimator, images
     # print(resized_masks.shape)
     # print (loss_estimator)
 
-    if resized_masks.ndim == 3 and model.get_nb_classes() == 1:  # [B,H,W]
+    if resized_masks.ndim == 3 and model.get_nb_labels() == 1:  # [B,H,W]
         # if here we are using  torch.nn.BCEWithLogitsLoss() as loss
-        # output shape is [N,1, H, W] and resized_masks shape is [N,H, W]  
+        # output shape is [N,1, H, W] and resized_masks shape is [N,H, W]
         # For some unknown reason here, torch.nn.BCEWithLogitsLoss() seem to not be able to bbroadcast
         # resized_masks correctly...
-        resized_masks = resized_masks.unsqueeze(1) 
+        resized_masks = resized_masks.unsqueeze(1)
 
     loss = loss_estimator(outputs, resized_masks)
     return loss
