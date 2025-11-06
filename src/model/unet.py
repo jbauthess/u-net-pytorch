@@ -1,28 +1,33 @@
+"""Implementation of the U-NET architecture"""
+
 from torch import Tensor
 from torch.nn import Conv2d
 
-from src.model.semantic_segmentation_model import SemanticSegmentationModel
-
 # import base blocks on which rely the U-Net architecture
-from .blocks import (
+from src.model.blocks import (
     CONV_KERNEL_SIZE,
     create_convolutional_block,
     create_downsampling_block,
     create_upsampling_block,
 )
+from src.model.semantic_segmentation_model import SemanticSegmentationModel
 
 
 class UNetModel(SemanticSegmentationModel):
+    """U-NET architecture"""
+
     def __init__(self, nb_in_channels: int, nb_labels: int, base_fm_number: int = 64):
         """intitialize UNet model architecture blocks
 
         Args:
             nb_in_channels (int): number of channels in the input image passed to the model
             nb_labels (int): number of labels the model is able to predict
-            base_fm_number (int, optional): base number used to define the number of feature maps in each layer of the model.
-                                            The larger this number, the larger the number of model parameters and memory / computation load
+            base_fm_number (int, optional): base number used to define the number of feature maps
+                                            in each layer of the model.
+                                            The larger this number, the larger the number of
+                                            model parameters and memory / computation load
         """
-        super(UNetModel, self).__init__(nb_labels)
+        super().__init__(nb_labels)
 
         # blocks corresponding to the contracting path
         self.compute_fm = create_convolutional_block(
@@ -47,12 +52,15 @@ class UNetModel(SemanticSegmentationModel):
         """Apply Unet model on a batch of images
 
         Args:
-            x (Tensor): batch of images. Images should have the same number of channels as the one used to initialize the model (nb_in_channels)
+            x (Tensor): batch of images. Images should have the same number of channels
+                        as the one used to initialize the model (nb_in_channels)
 
         Returns:
-            Tensor: output tesor. Same resolution as the input image passed to the model. The number of channels of the output tensor corresponds to
-            the number of label the model predicts (nb_labels). Each channel (feature map) of the output tensor corresponds to a label.
-            Each pixel of a channel stores a score homogeneous to the probability the pixel corresponds to the label
+            Tensor: output tesor. Same resolution as the input image passed to the model.
+            The number of channels of the output tensor corresponds to
+            the number of labels the model predicts (nb_labels). Each channel (feature map)
+            of the output tensor corresponds to a label. Each pixel of a channel stores
+            a score homogeneous to the probability the pixel corresponds to the label
         """
 
         # coompress the information (encoder)

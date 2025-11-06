@@ -58,18 +58,12 @@ def image_mask_path_generator(
         FileNotFoundError: If either source folder does not exist or is not a directory.
     """
     if not src_image_folder.exists() or not src_image_folder.is_dir():
-        raise FileNotFoundError(
-            f"{src_image_folder=} does not exist or is not a directory!"
-        )
+        raise FileNotFoundError(f"{src_image_folder=} does not exist or is not a directory!")
     if not src_mask_folder.exists() or not src_mask_folder.is_dir():
-        raise FileNotFoundError(
-            f"{src_mask_folder=} does not exist or is not a directory!"
-        )
+        raise FileNotFoundError(f"{src_mask_folder=} does not exist or is not a directory!")
 
     image_list = [
-        f
-        for f in src_image_folder.iterdir()
-        if f.is_file() and f.suffix.lower() == ext.lower()
+        f for f in src_image_folder.iterdir() if f.is_file() and f.suffix.lower() == ext.lower()
     ]
 
     for image_path in image_list:
@@ -80,7 +74,7 @@ def image_mask_path_generator(
             yield PairedData(image_path, mask_filenames[0])
         else:
             logger.warning(
-                f"Image {image_filename} has {len(mask_filenames)} corresponding masks: SKIPPED"
+                "Image %s has %d corresponding masks: SKIPPED", image_filename, len(mask_filenames)
             )
 
 
@@ -98,7 +92,7 @@ def copy_items(items: Sequence[PairedData], dest_folder: Path) -> None:
     try:
         dest_folder.mkdir(parents=True, exist_ok=True)
     except OSError as e:
-        logger.error(f"Failed to create destination folder {dest_folder}: {e}")
+        logger.error("Failed to create destination folder %s: %s", str(dest_folder), str(e))
         raise
 
     for item in items:
@@ -107,7 +101,7 @@ def copy_items(items: Sequence[PairedData], dest_folder: Path) -> None:
             shutil.copy2(item.mask_path, dest_folder / item.mask_path.name)
         except OSError as e:
             logger.error(
-                f"Failed to copy {item.image_path.name} or {item.mask_path.name}: {e}"
+                "Failed to copy %s or %s: %s", item.image_path.name, item.mask_path.name, str(e)
             )
             raise
 
@@ -142,9 +136,7 @@ def split_datasets(
         IndexError: If the number of destination folders does not match the number of split ratios.
     """
     if len(dest_folders) != len(split_ratios):
-        raise IndexError(
-            f"{len(dest_folders)=} and {len(split_ratios)=} must be equal!"
-        )
+        raise IndexError(f"{len(dest_folders)=} and {len(split_ratios)=} must be equal!")
     validate_split_ratios(split_ratios)
 
     items = list(image_mask_path_generator(src_image_folder, src_mask_folder, ext))
@@ -156,7 +148,8 @@ def split_datasets(
         copy_items(items[index_begin:index_end], folder_path)
         index_begin = index_end
 
-    # pending the ratio used, the size of the src dataset and int rounding it may still remain some data
+    # pending the ratio used, the size of the src dataset and int rounding
+    # it may still remain some data
     if index_end < len(items):
-        copy_items(items[index_end:], folder_path)
-        logger.info(f"Copy remaining data in {folder_path}")
+        copy_items(items[index_end:], dest_folders[-1])
+        logger.info("Copy remaining data in %s", dest_folders[-1])

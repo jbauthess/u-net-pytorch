@@ -1,4 +1,7 @@
-"""match predictions to ground-truth (compute True Positives, False Positives and False Negatives pixels)"""
+"""
+match predictions to ground-truth
+(compute True Positives, False Positives and False Negatives pixels)
+"""
 
 from dataclasses import dataclass
 
@@ -7,16 +10,17 @@ import numpy as np
 
 @dataclass
 class MatchMaps:
-    """store the masks images corresponding to True Positives, False Positives and False Negatives"""
+    """
+    store the masks images corresponding to
+    True Positives, False Positives and False Negatives
+    """
 
     tp: int  # True Positives
     fp: int  # False Positives
     fn: int  # False Negatives
 
 
-def compute_match_maps_one_label(
-    gt: np.ndarray, pred: np.ndarray, label: int
-) -> MatchMaps:
+def compute_match_maps_one_label(gt: np.ndarray, pred: np.ndarray, label: int) -> MatchMaps:
     """
     Generate pixel-wise true-positive, false-negative, false-positive maps
 

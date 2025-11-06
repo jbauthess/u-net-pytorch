@@ -1,3 +1,5 @@
+"""unit-tests for the metrics.py module"""
+
 import unittest
 from dataclasses import dataclass
 from typing import List
@@ -8,7 +10,7 @@ import pytest
 from src.benchmark.metrics import (
     MatchResult,
     MatchResultOneLabel,
-    compute_IoU,
+    compute_iou,
     compute_per_label_f1score,
     compute_pixelwise_accuracy,
     compute_precision,
@@ -16,8 +18,9 @@ from src.benchmark.metrics import (
 )
 
 
-# Mock MatchMaps class for testing
-class MatchMaps:
+class FakeMatchMaps:
+    """Mock of the MatchMaps class used for testing"""
+
     def __init__(self, tp, fp, fn):
         self.tp = np.array(tp)
         self.fp = np.array(fp)
@@ -25,6 +28,8 @@ class MatchMaps:
 
 
 class TestMatchResultOneLabel(unittest.TestCase):
+    """Test MatchResultOneLabel class"""
+
     def test_initialization(self):
         """Test initialization of MatchResultOneLabel"""
         label_result = MatchResultOneLabel()
@@ -35,7 +40,7 @@ class TestMatchResultOneLabel(unittest.TestCase):
     def test_update(self):
         """Test updating MatchResultOneLabel with MatchMaps"""
         label_result = MatchResultOneLabel()
-        match_maps = MatchMaps(
+        match_maps = FakeMatchMaps(
             tp=[[True, False, False], [False, True, False]],
             fp=[[False, False, True], [False, False, True]],
             fn=[[True, False, False], [False, False, False]],
@@ -47,6 +52,8 @@ class TestMatchResultOneLabel(unittest.TestCase):
 
 
 class TestMatchResult(unittest.TestCase):
+    """Test MatchResult class"""
+
     def test_initialization(self):
         """Test initialization of MatchResult"""
         match_result = MatchResult(nb_labels=3)
@@ -56,7 +63,7 @@ class TestMatchResult(unittest.TestCase):
     def test_update_score_one_label(self):
         """Test updating score for one label"""
         match_result = MatchResult(nb_labels=3)
-        match_maps = MatchMaps(
+        match_maps = FakeMatchMaps(
             tp=[[True, False, False], [False, True, False]],
             fp=[[False, False, True], [False, False, True]],
             fn=[[True, False, False], [False, False, False]],
@@ -75,7 +82,7 @@ class TestMatchResult(unittest.TestCase):
     def test_invalid_label(self):
         """Test updating score with an invalid label"""
         match_result = MatchResult(nb_labels=3)
-        match_maps = MatchMaps(
+        match_maps = FakeMatchMaps(
             tp=[[True, False, False], [False, True, False]],
             fp=[[False, False, True], [False, False, True]],
             fn=[[True, False, False], [False, False, False]],
@@ -85,15 +92,17 @@ class TestMatchResult(unittest.TestCase):
 
 
 class TestComputePixelwiseAccuracy(unittest.TestCase):
+    """test computation of segmentation accuracy"""
+
     def test_compute_accuracy(self):
         """Test computing pixelwise accuracy"""
         match_result = MatchResult(nb_labels=2)
-        match_maps_1 = MatchMaps(
+        match_maps_1 = FakeMatchMaps(
             tp=[[True, False, False], [False, True, False]],
             fp=[[False, False, True], [False, False, True]],
             fn=[[True, False, False], [False, False, False]],
         )
-        match_maps_2 = MatchMaps(
+        match_maps_2 = FakeMatchMaps(
             tp=[[False, True, False], [False, False, True]],
             fp=[[True, False, False], [False, False, False]],
             fn=[[False, False, True], [False, False, False]],
@@ -119,8 +128,9 @@ class TestComputePixelwiseAccuracy(unittest.TestCase):
         (0, 0, 0, 1),  # no ground_truth, no predictions
     ],
 )
-def test_compute_IoU(tp, fp, fn, expected_iou) -> None:
-    assert compute_IoU(tp, fp, fn) == expected_iou, f"error computing IoU for {tp=}, {fp=}, {fn=}"
+def test_compute_iou(tp: int, fp: int, fn: int, expected_iou: float) -> None:
+    """test the computation of IoU from tp, fp and fn"""
+    assert compute_iou(tp, fp, fn) == expected_iou, f"error computing IoU for {tp=}, {fp=}, {fn=}"
 
 
 @pytest.mark.parametrize(
@@ -130,7 +140,8 @@ def test_compute_IoU(tp, fp, fn, expected_iou) -> None:
         (0, 0, np.nan),  # no ground_truth
     ],
 )
-def test_compute_recall(tp, fn, expected_recall) -> None:
+def test_compute_recall(tp: int, fn: int, expected_recall: float) -> None:
+    """test the computation of recall from tp and fn"""
     if np.isnan(expected_recall):
         assert compute_recall(tp, fn) is np.nan, f"error computing recall  for {tp=}, {fn=}"
     else:
@@ -147,12 +158,13 @@ def test_compute_recall(tp, fn, expected_recall) -> None:
         (0, 0, np.nan),  # no ground_truth, no pred
     ],
 )
-def test_compute_precision(tp, fp, expected_precision) -> None:
+def test_compute_precision(tp: int, fp: int, expected_precision: float) -> None:
+    """test the computation of precision from tp and fp"""
     if expected_precision is np.nan:
         assert compute_precision(tp, fp) is np.nan, f"error computing precision  for {tp=}, {fp=}"
     else:
         assert compute_precision(tp, fp) == expected_precision, (
-            f"error computing precision for {tp=}, {fn=}"
+            f"error computing precision for {tp=}, {fp=}"
         )
 
 
@@ -192,12 +204,11 @@ F2 = 2 * (4 / (4 + 5) * (4 / (4 + 7))) / (4 / (4 + 5) + (4 / (4 + 7)))
             [F1, F2],
         ),  # general case
         (
-            FakeMatchResultOneLabel(
-                0, 0, 4
-            ),  # Precision is 0 as there are no false postives, recall is 0 as there are no true positives -> corresponding f1-score is 0
-            FakeMatchResultOneLabel(
-                0, 7, 0
-            ),  # Recall is not defined -> corresponding f1-score is nan
+            # Precision is 0 as there are no false postives, recall is 0 as there are no
+            # true positives -> corresponding f1-score is 0
+            FakeMatchResultOneLabel(0, 0, 4),
+            # Recall is not defined -> corresponding f1-score is nan
+            FakeMatchResultOneLabel(0, 7, 0),
             15,
             [0.0, np.nan],
         ),
@@ -206,6 +217,10 @@ F2 = 2 * (4 / (4 + 5) * (4 / (4 + 7))) / (4 / (4 + 5) + (4 / (4 + 7)))
 def test_compute_per_label_f1score(
     match_result_label_1, match_result_label_2, nb_pixels, expected_f1_score
 ) -> None:
+    """
+    test the computation of f1-scores from the matching results
+    of a 2-labels segmentation problem
+    """
     fake_match_result = FakeMatchResult(
         match_result_label_1, match_result_label_2, nb_pixels=nb_pixels
     )

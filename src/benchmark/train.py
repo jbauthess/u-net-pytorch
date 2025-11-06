@@ -1,3 +1,5 @@
+"""this module implement the training of semantic segmentation models"""
+
 from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path
@@ -14,12 +16,16 @@ from src.model.semantic_segmentation_model import SemanticSegmentationModel
 
 @dataclass
 class EarlyStoppingParams:
+    """Parameterization of early stopping"""
+
     patience: int
     min_delta: float
 
 
 @dataclass
 class HyperParameters:
+    """Hyper parameters used during the training step"""
+
     nb_epochs: int
     batch_size: int
     lr: float
@@ -34,7 +40,19 @@ def train(
     validation_dataset: Dataset,
     hyperparameters: HyperParameters,
     model_save_path: Path,
-):
+) -> None:
+    """Train a semantic segmentation model on a set of images
+
+    Args:
+        device (torch.device): device used for computations
+        model (SemanticSegmentationModel): the model to train
+        init_weights_path (Path | None): initialization weights of the model
+        train_dataset (Dataset): the dataset on which the model is trained
+        validation_dataset (Dataset): dataset used to evaluate model performance
+                                      and stop the training if needed (Early Stopping)
+        hyperparameters (HyperParameters): hyper-parameters used to configure training loop
+        model_save_path (Path): the model will be saved here at the  end of the training
+    """
     logger = getLogger()
 
     # initialize an iterable over the train set
@@ -51,7 +69,9 @@ def train(
             hyperparameters.early_stopping.min_delta,
         )
         logger.info(
-            f"Early stoppoing ACTIVATED : {early_stopping.patience=}, {early_stopping.min_delta=}"
+            "Early stoppoing ACTIVATED : patience=%d, min_delta=%f",
+            early_stopping.patience,
+            early_stopping.min_delta,
         )
     else:
         logger.info("Early stopping DEACTIVATED")
@@ -76,7 +96,7 @@ def train(
         logger.info("Init model weights using the default initialization strategy")
         model.apply(init_weights)
     else:
-        logger.info(f"Init model weights using provided weights : {init_weights_path}")
+        logger.info("Init model weights using provided weights : %s", str(init_weights_path))
         checkpoint = torch.load(init_weights_path, map_location="cpu")
         model.load_state_dict(checkpoint)
 
@@ -85,31 +105,25 @@ def train(
 
     # use cross-entropy loss
     logger.info(
-        f"initialize loss and optimizer for a model predicting {model.get_nb_labels()} labels"
+        "initialize loss and optimizer for a model predicting %d labels", model.get_nb_labels()
     )
     loss_estimator = (
-        torch.nn.BCEWithLogitsLoss()
-        if model.get_nb_labels() == 1
-        else torch.nn.CrossEntropyLoss()
+        torch.nn.BCEWithLogitsLoss() if model.get_nb_labels() == 1 else torch.nn.CrossEntropyLoss()
     )
 
-    logger.info(f"selected loss function {loss_estimator}")
+    logger.info("selected loss function: %s", str(loss_estimator))
 
     # use Adam optimizer
     # optimizer = optim.SGD(model.parameters(), lr=hyperparameters.lr, momentum=0.9)
     optimizer = optim.Adam(model.parameters(), lr=hyperparameters.lr)
 
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.1, patience=5
-    )
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=5)
 
     for epoch in range(hyperparameters.nb_epochs):
         ## --- train one epoch
         # set the module to the training mode
         model.train(True)
-        train_loss = train_one_epoch(
-            device, model, loss_estimator, optimizer, train_loader
-        )
+        train_loss = train_one_epoch(device, model, loss_estimator, optimizer, train_loader)
         model.train(False)
         ## ---
 
@@ -144,10 +158,9 @@ def train(
         ##
 
         ## save model weights for the best observed val loss until now
-
-        logger.info(
-            f"Epoch [{epoch + 1}/{hyperparameters.nb_epochs}], Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}"
-        )
+        info_str = f"Epoch [{epoch + 1}/{hyperparameters.nb_epochs}], Loss: {epoch_loss:.4f}, \
+                    Val Loss: {val_loss:.4f}"
+        logger.info(info_str)
 
         ## stop training if val loss does not improve
         if stop_train_loop:
@@ -155,7 +168,7 @@ def train(
             break
 
         scheduler.step(val_loss)
-        logger.info(f"Epoch {epoch}, Learning Rate: {optimizer.param_groups[0]['lr']}")
+        logger.info("Epoch %s, Learning Rate: %f", epoch, optimizer.param_groups[0]["lr"])
 
     writer.close()
 
@@ -166,16 +179,15 @@ def train(
 def train_one_epoch(
     device, model: SemanticSegmentationModel, loss_estimator, optimizer, train_loader
 ):
+    """train the model for one epoch"""
     running_loss = 0.0
-    for batch_index, data in enumerate(train_loader):
+    for _, data in enumerate(train_loader):
         images, masks = data
 
         images = images.to(device)
 
         # train one epoch
-        running_loss += train_one_batch(
-            device, model, loss_estimator, optimizer, images, masks
-        )
+        running_loss += train_one_batch(device, model, loss_estimator, optimizer, images, masks)
 
     return running_loss
 
@@ -183,6 +195,7 @@ def train_one_epoch(
 def train_one_batch(
     device, model: SemanticSegmentationModel, loss_estimator, optimizer, images, masks
 ):
+    """train the model on a batch of images"""
     # Zero the parameter gradients
     optimizer.zero_grad()
 
@@ -197,9 +210,8 @@ def train_one_batch(
     return running_loss
 
 
-def compute_loss(
-    device, model: SemanticSegmentationModel, loss_estimator, images, masks
-):
+def compute_loss(device, model: SemanticSegmentationModel, loss_estimator, images, masks):
+    """Compute the model loss on a batch of images"""
     # Forward pass
     outputs = model(images)
 
@@ -219,8 +231,8 @@ def compute_loss(
     if resized_masks.ndim == 3 and model.get_nb_labels() == 1:  # [B,H,W]
         # if here we are using  torch.nn.BCEWithLogitsLoss() as loss
         # output shape is [N,1, H, W] and resized_masks shape is [N,H, W]
-        # For some unknown reason here, torch.nn.BCEWithLogitsLoss() seem to not be able to bbroadcast
-        # resized_masks correctly...
+        # For some unknown reason here, torch.nn.BCEWithLogitsLoss() seem to not be able
+        # to broadcast resized_masks correctly...
         resized_masks = resized_masks.unsqueeze(1)
 
     loss = loss_estimator(outputs, resized_masks)
@@ -231,9 +243,7 @@ def init_weights(module):
     """Function used to initialize the weights of the network different layers"""
     if isinstance(module, (torch.nn.Conv2d, torch.nn.ConvTranspose2d)):
         # He / Kaiming (good for ReLU)
-        torch.nn.init.kaiming_normal_(
-            module.weight, mode="fan_out", nonlinearity="relu"
-        )
+        torch.nn.init.kaiming_normal_(module.weight, mode="fan_out", nonlinearity="relu")
         # If you wanted Xavier instead, uncomment the line below:
         # nn.init.xavier_normal_(module.weight)
 

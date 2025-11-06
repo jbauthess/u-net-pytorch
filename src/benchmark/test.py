@@ -1,3 +1,5 @@
+"""methods used to run inference and evaluate a semantic segmentation model"""
+
 import logging
 from typing import List
 
@@ -16,8 +18,10 @@ logger = logging.getLogger()
 def generate_mask_from_prediction(
     predicted_logits: torch.Tensor, thresh: float = 0.7
 ) -> torch.Tensor:
-    """convert semantic segmentation model output feature maps (one feature map per label) into
-    a segmentation mask (flattened mask containing pixels with different labels, one label per pixel)
+    """
+    convert semantic segmentation model output feature maps (one feature map per label) into
+    a segmentation mask (flattened mask containing pixels with different labels,
+    one label per pixel)
     """
     # the number of target labels corresponds to the number of channels in the predicted volume
     nb_labels = predicted_logits.shape[1]
@@ -48,6 +52,15 @@ def test(
     metrics: List[TestMetrics] | None,
     verbose=0,
 ):
+    """run the model on a dataset and compute the evaluation report
+
+    Args:
+        device (torch.device): device used for inference
+        model (SemanticSegmentationModel): the model to evaluate
+        test_dataset (Dataset): the dataset on which the model is evaluated
+        metrics (List[TestMetrics] | None): the list of evaluation metrics to include in the report
+        verbose (int, optional): Display predictions on images. In {0, 1}. Defaults to 0.
+    """
     model.eval()
 
     nb_labels = model.get_nb_labels()
@@ -65,9 +78,7 @@ def test(
             # Forward pass
             outputs = model(images)  # dim (N, C, H, W)
 
-            pred_masks = generate_mask_from_prediction(outputs, 0.5).to(
-                "cpu"
-            )  # dim (N, H, W)
+            pred_masks = generate_mask_from_prediction(outputs, 0.5).to("cpu")  # dim (N, H, W)
 
             # pred_masks = torchvision.transforms.functional.resize(
             #     pred_masks,

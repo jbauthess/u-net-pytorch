@@ -1,4 +1,6 @@
-"""This module contains useful metrics to evaluate a semantic segmentation model"""
+"""
+This module contains useful metrics to evaluate a semantic segmentation model
+"""
 
 from typing import List
 
@@ -8,7 +10,10 @@ from src.benchmark.match import MatchMaps
 
 
 class MatchResultOneLabel:
-    """store the number of pixels detected as True Positives, False Positives and False Negatives for a specific label"""
+    """
+    store the number of pixels detected as True Positives, False Positives and False Negatives
+    for a specific label
+    """
 
     tp: int  # True Positives
     fp: int  # False Positives
@@ -20,6 +25,9 @@ class MatchResultOneLabel:
         self.fn = 0
 
     def update(self, match_maps: MatchMaps) -> None:
+        """Update True Positive, False Positive and False negative
+        metrics from input matching maps (aggregation)
+        """
         self.tp += np.sum(match_maps.tp)
         self.fp += np.sum(match_maps.fp)
         self.fn += np.sum(match_maps.fn)
@@ -29,7 +37,10 @@ class MatchResultOneLabel:
 
 
 class MatchResult:
-    """Matching results for all labels"""
+    """Matching results for all labels
+
+    Aggregation for each label of the matching results associated to a set of image
+    """
 
     match_per_label: List[MatchResultOneLabel]
     nb_pixels: int  # total number of pixels processed
@@ -38,16 +49,29 @@ class MatchResult:
         self.nb_pixels = 0
         self.match_per_label = []
 
-        for l in range(nb_labels):
+        for _ in range(nb_labels):
             self.match_per_label.append(MatchResultOneLabel())
 
     def update_score_one_label(self, match_maps: MatchMaps, label: int) -> None:
+        """Update score (True Positive, False Positive, False Negative)
+            associated to label 'label'
+
+        Args:
+            match_maps (MatchMaps): matching maps (masks) associated to
+                                    (True Positive, False Positive, False Negative)
+                                    for the label of interest
+            label (int): label of interest
+
+        Raises:
+            IndexError: label out of bound
+        """
         if label >= len(self.match_per_label) or label < 0:
             raise IndexError("label invalid!")
 
         self.match_per_label[label].update(match_maps)
 
     def update_nb_pixels(self, nb_pixels: int) -> None:
+        """Update total number of pixels processed"""
         self.nb_pixels += nb_pixels
 
     def __str__(self) -> str:
@@ -59,7 +83,7 @@ class MatchResult:
         return text
 
 
-def compute_IoU(tp: int, fp: int, fn: int) -> float:
+def compute_iou(tp: int, fp: int, fn: int) -> float:
     """compute Intersection over Union score
 
     Args:
@@ -72,27 +96,27 @@ def compute_IoU(tp: int, fp: int, fn: int) -> float:
     """
     if tp + fn + fp > 0:
         return tp / (tp + fn + fp)
-    else:
-        # label not present in ground-truth and predictions
-        if fp == 0:
-            return 1.0  # predictions agree with ground-truth
 
-        return np.nan  # 0 / 0
+    # label not present in ground-truth and predictions
+    if fp == 0:
+        return 1.0  # predictions agree with ground-truth
+
+    return np.nan  # 0 / 0
 
 
-def compute_per_label_IoU(match_result: MatchResult) -> List[float]:
+def compute_per_label_iou(match_result: MatchResult) -> List[float]:
     """Compute the per label intersection over union scores (IoU)
 
     Args:
-        match (MatchResult): matching results containing the numbers of True Positives, False Positives, and False Negatives
-                             for each label
+        match (MatchResult): matching results containing the numbers of True Positives,
+                             False Positives and False Negatives for each label
 
     Returns:
         List[float]: list of IoU scores
     """
     res = []
     for m in match_result.match_per_label:
-        res.append(compute_IoU(m.tp, m.fp, m.fn))
+        res.append(compute_iou(m.tp, m.fp, m.fn))
 
     return res
 
@@ -109,16 +133,16 @@ def compute_recall(tp: int, fn: int) -> float:
     """
     if tp + fn > 0:
         return tp / (tp + fn)
-    else:
-        return np.nan  # label not present in ground-truth
+
+    return np.nan  # label not present in ground-truth
 
 
 def compute_per_label_recall(match_result: MatchResult) -> List[float]:
     """Compute the per label recall scores
 
     Args:
-        match (MatchResult): matching results containing the numbers of True Positives, False Positives, and False Negatives
-                             for each label
+        match (MatchResult): matching results containing the numbers of True Positives,
+                             False Positives, and False Negatives for each label
 
     Returns:
         List[float]: list of recall scores
@@ -142,16 +166,16 @@ def compute_precision(tp: int, fp: int) -> float:
     """
     if tp + fp > 0:
         return tp / (tp + fp)
-    else:
-        return np.nan  # label not present in ground-truth and pred (fp == 0, tp == 0)
+
+    return np.nan  # label not present in ground-truth and pred (fp == 0, tp == 0)
 
 
 def compute_per_label_precision(match_result: MatchResult) -> List[float]:
     """Compute the per label precision scores
 
     Args:
-        match (MatchResult): matching results containing the numbers of True Positives, False Positives, and False Negatives
-                             for each label
+        match (MatchResult): matching results containing the numbers of True Positives,
+                             False Positives, and False Negatives for each label
 
     Returns:
         List[float]: list of precision scores
@@ -162,9 +186,8 @@ def compute_per_label_precision(match_result: MatchResult) -> List[float]:
             res.append(m.tp / (m.tp + m.fp))
         else:
             # label not present in ground-truth and never predicted
-            res.append(
-                1
-            )  # 1 : because the model never predicted this label, so in that way it agrees with ground-truth
+            # 1 : because the model never predicted this label, it agrees with ground-truth -> 1
+            res.append(1)
 
     return res
 
@@ -173,8 +196,8 @@ def compute_per_label_f1score(match_result: MatchResult) -> List[float]:
     """Compute the per label f1 scores
 
     Args:
-        match (MatchResult): matching results containing the numbers of True Positives, False Positives, and False Negatives
-                             for each label
+        match (MatchResult): matching results containing the numbers of True Positives,
+                             False Positives, and False Negatives for each label
 
     Returns:
         List[float]: list of f1 scores
@@ -196,8 +219,8 @@ def compute_pixelwise_accuracy(match_result: MatchResult) -> float:
     """compute the accuracy
 
     Args:
-        match (MatchResult): matching results containing the numbers of True Positives, False Positives, and False Negatives
-                             for each label
+        match (MatchResult): matching results containing the numbers of True Positives,
+                             False Positives, and False Negatives for each label
 
     Returns:
         float: accuracy

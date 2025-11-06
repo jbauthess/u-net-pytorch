@@ -44,3 +44,6 @@ pytest = "^8.4.1"
 [tool.poetry.group.test]
 optional = true
 
+[tool.poetry.group.dev.dependencies]
+pylint = "^4.0.2"
+

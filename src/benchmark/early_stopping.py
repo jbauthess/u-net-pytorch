@@ -1,3 +1,6 @@
+"""implementation of early stopping"""
+
+
 class EarlyStopping:
     """
     A custom early stopping class to monitor a validation metric (e.g., validation loss)
@@ -12,8 +15,10 @@ class EarlyStopping:
         Initializes the EarlyStopping instance.
 
         Args:
-            patience (int, optional): Number of epochs to wait for improvement before stopping. Defaults to 5.
-            min_delta (float, optional): Minimum change in the monitored metric to qualify as an improvement. Defaults to 0.
+            patience (int, optional): Number of epochs to wait for improvement before stopping.
+                                      Defaults to 5.
+            min_delta (float, optional): Minimum change in the monitored metric to qualify
+                                         as an improvement. Defaults to 0.
         """
         self.patience = patience
         self.min_delta = min_delta
