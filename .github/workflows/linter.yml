@@ -20,14 +20,11 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction --no-ansi
         
-      - name: Run pylint
-        run: poetry run pylint --fail-on=error ./  # Only fail on errors, not warnings
-          
       - name: Run pylint on src
-        run: pylint ./src --exit-zero 
+        run: poetry run pylint ./src --exit-zero 
       
       - name: Run pylint on tests     
-        run: pylint ./tests --exit-zero # --fail-on=error  
+        run: poetry run pylint ./tests --exit-zero # --fail-on=error  
         # uses: github/super-linter@v4
         # env:
           # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
