@@ -18,7 +18,7 @@ jobs:
         run: pip install poetry
         
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --no-interaction --no-ansi
         
       - name: Run pylint
         run: poetry run pylint --fail-on=error ./  # Only fail on errors, not warnings
