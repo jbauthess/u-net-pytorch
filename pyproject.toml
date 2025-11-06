@@ -29,6 +29,7 @@ priority = "explicit"
 [tool.poetry.dependencies]
 torch = {source = "pytorch-gpu-source"}
 torchvision = {source = "pytorch-gpu-source"}
+dill = ">=0.3.7"
 
 [tool.poetry.group.debug.dependencies]
 jupyter = "^1.1.1"
