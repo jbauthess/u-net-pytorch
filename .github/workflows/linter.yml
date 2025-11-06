@@ -21,7 +21,9 @@ jobs:
         run: poetry cache clear --all
         
       - name: Install dependencies
-        run: poetry install --no-interaction --no-ansi
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry install --no-interaction --no-ansi
         
       - name: Run pylint on src
         run: poetry run pylint ./src --exit-zero 
