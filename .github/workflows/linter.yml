@@ -19,8 +19,9 @@ jobs:
         
       - name: Install dependencies
         run: |
-          poetry config virtualenvs.in-project true
-          poetry install --no-interaction --no-ansi
+          poetry debug:resolve pylint
+          poetry install
+          
         
       - name: Run pylint on src
         run: poetry run pylint ./src --exit-zero 
