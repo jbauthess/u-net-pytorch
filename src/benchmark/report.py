@@ -6,6 +6,7 @@ from typing import List
 
 from src.benchmark.metrics import (
     MatchResult,
+    compute_per_label_f1score,
     compute_per_label_IoU,
     compute_per_label_precision,
     compute_per_label_recall,
@@ -16,9 +17,10 @@ logger = logging.getLogger()
 
 
 class TestMetrics(StrEnum):
-    ACCURACY = ("accuracy",)
-    RECALL_PER_LABEL = ("recall_per_label",)
-    PRECISION_PER_LABEL = ("precision",)
+    ACCURACY = "accuracy"
+    RECALL_PER_LABEL = "recall_per_label"
+    F1_SCORE_PER_LABEL = "f1_score_per_label"
+    PRECISION_PER_LABEL = "precision"
     IOU_PER_LABEL = "iou_per_label"
 
 
@@ -45,6 +47,11 @@ def generate_report(match_result: MatchResult, metrics: List[TestMetrics]) -> No
             case TestMetrics.PRECISION_PER_LABEL:
                 logger.info("PRECISION PER LABEL")
                 for l, p in enumerate(compute_per_label_precision(match_result)):
+                    logger.info("label %s: %s", l, p)
+
+            case TestMetrics.F1_SCORE_PER_LABEL:
+                logger.info("F1-SCORE PER LABEL")
+                for l, p in enumerate(compute_per_label_f1score(match_result)):
                     logger.info("label %s: %s", l, p)
 
             case TestMetrics.IOU_PER_LABEL:

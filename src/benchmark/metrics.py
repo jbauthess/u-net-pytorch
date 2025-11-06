@@ -169,6 +169,29 @@ def compute_per_label_precision(match_result: MatchResult) -> List[float]:
     return res
 
 
+def compute_per_label_f1score(match_result: MatchResult) -> List[float]:
+    """Compute the per label f1 scores
+
+    Args:
+        match (MatchResult): matching results containing the numbers of True Positives, False Positives, and False Negatives
+                             for each label
+
+    Returns:
+        List[float]: list of f1 scores
+    """
+
+    recall_scores = compute_per_label_recall(match_result)
+    precision_scores = compute_per_label_precision(match_result)
+
+    res = []
+
+    for r, p in zip(recall_scores, precision_scores):
+        f1_score = 2 * r * p / (r + p) if ~np.isnan(r) and ~np.isnan(p) and p + r > 0 else np.nan
+        res.append(f1_score)
+
+    return res
+
+
 def compute_pixelwise_accuracy(match_result: MatchResult) -> float:
     """compute the accuracy
 
@@ -187,92 +210,3 @@ def compute_pixelwise_accuracy(match_result: MatchResult) -> float:
         correct_matches += m.tp
 
     return correct_matches / match_result.nb_pixels
-
-
-def _flatten_and_ignore(pred: np.ndarray, gt: np.ndarray, ignore_index: int | None = None):
-    """
-    flatten pred and gt to be 1D vectors containing valid labels
-    if ignore_index is provided, it is used to detect corresponding positions in gt and filter out
-    those positions in pred and gt
-    """
-    pred = pred.ravel()
-    gt = gt.ravel()
-    if ignore_index is not None:
-        mask = gt != ignore_index
-        pred, gt = pred[mask], gt[mask]
-    return pred, gt
-
-
-def compute_pixelwise_accuracy_ref(pred, gt, ignore_index=None) -> float:
-    """Compute Pixel Accuracy (PA) :  number of valid predicted pixels / total number of pixels"""
-    # TODO(move as a reference implementation to test compute_pixelwise_accuracy() implementation in test_metrics.py)
-    pred, gt = _flatten_and_ignore(pred, gt, ignore_index)
-    return np.mean(pred == gt)
-
-
-# def mean_class_accuracy(pred, gt, num_classes, ignore_index=None):
-#     """Mean Class Accuracy (MCA) – moyenne des précisions par classe."""
-#     pred, gt = _flatten_and_ignore(pred, gt, ignore_index)
-#     acc_per_class = []
-#     for c in range(num_classes):
-#         mask = gt == c
-#         if np.any(mask):
-#             acc = np.mean(pred[mask] == c)
-#             acc_per_class.append(acc)
-#         else:
-#             # classe absente du GT → on l’ignore dans la moyenne
-#             acc_per_class.append(np.nan)
-#     return np.nanmean(acc_per_class)
-
-
-# def confusion_matrix(pred, gt, num_classes, ignore_index=None):
-#     """Matrice de confusion C où C[i,j] = nb de pixels de vraie classe i prédites comme j."""
-#     pred, gt = _flatten_and_ignore(pred, gt, ignore_index)
-#     k = num_classes
-#     cm = np.bincount(k * gt.astype(int) + pred.astype(int), minlength=k * k).reshape(
-#         k, k
-#     )
-#     return cm
-
-
-# def iou_per_class(cm):
-#     """IoU pour chaque classe à partir de la matrice de confusion."""
-#     tp = np.diag(cm)
-#     fp = cm.sum(axis=0) - tp
-#     fn = cm.sum(axis=1) - tp
-#     denom = tp + fp + fn
-#     # éviter la division par zéro
-#     iou = np.where(denom > 0, tp / denom, np.nan)
-#     return iou
-
-
-# def mean_iou(pred, gt, num_classes, ignore_index=None):
-#     """Mean IoU (mIoU)"""
-#     cm = confusion_matrix(pred, gt, num_classes, ignore_index)
-#     iou = iou_per_class(cm)
-#     return np.nanmean(iou)
-
-
-# def frequency_weighted_iou(pred, gt, num_classes, ignore_index=None):
-#     """Frequency‑Weighted IoU (FWIoU)"""
-#     cm = confusion_matrix(pred, gt, num_classes, ignore_index)
-#     freq = cm.sum(axis=1) / cm.sum()
-#     iou = iou_per_class(cm)
-#     return np.nansum(freq * iou)
-
-
-# def dice_per_class(cm):
-#     """Dice (F1) pour chaque classe à partir de la matrice de confusion."""
-#     tp = np.diag(cm)
-#     fp = cm.sum(axis=0) - tp
-#     fn = cm.sum(axis=1) - tp
-#     denom = 2 * tp + fp + fn
-#     dice = np.where(denom > 0, 2 * tp / denom, np.nan)
-#     return dice
-
-
-# def mean_dice(pred, gt, num_classes, ignore_index=None):
-#     """Mean Dice (mDice)"""
-#     cm = confusion_matrix(pred, gt, num_classes, ignore_index)
-#     dice = dice_per_class(cm)
-#     return np.nanmean(dice)

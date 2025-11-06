@@ -1,4 +1,6 @@
 import unittest
+from dataclasses import dataclass
+from typing import List
 
 import numpy as np
 import pytest
@@ -7,6 +9,7 @@ from src.benchmark.metrics import (
     MatchResult,
     MatchResultOneLabel,
     compute_IoU,
+    compute_per_label_f1score,
     compute_pixelwise_accuracy,
     compute_precision,
     compute_recall,
@@ -151,6 +154,66 @@ def test_compute_precision(tp, fp, expected_precision) -> None:
         assert compute_precision(tp, fp) == expected_precision, (
             f"error computing precision for {tp=}, {fn=}"
         )
+
+
+@dataclass
+class FakeMatchResultOneLabel:
+    """Fake version of MatchResultOneLabel used for tests"""
+
+    tp: int  # True Positives
+    fp: int  # False Positives
+    fn: int  # False Negatives
+
+
+class FakeMatchResult:
+    """Matching results for all labels"""
+
+    match_per_label: List[MatchResultOneLabel]
+    nb_pixels: int  # total number of pixels processed
+
+    def __init__(self, *match_result_one_label: MatchResultOneLabel, nb_pixels: int):
+        self.match_per_label = match_result_one_label
+        self.nb_pixels = nb_pixels
+
+
+# test f1-score computation for a semantic segmentation problem using 2 different labels
+# F1 scores corresponding to FakeMatchResultOneLabel(5,6,4), FakeMatchResultOneLabel(4,7,5)
+F1 = 2 * (5 / (5 + 4) * (5 / (5 + 6))) / (5 / (5 + 4) + (5 / (5 + 6)))
+F2 = 2 * (4 / (4 + 5) * (4 / (4 + 7))) / (4 / (4 + 5) + (4 / (4 + 7)))
+
+
+@pytest.mark.parametrize(
+    "match_result_label_1, match_result_label_2, nb_pixels, expected_f1_score",
+    [
+        (
+            FakeMatchResultOneLabel(5, 6, 4),
+            FakeMatchResultOneLabel(4, 7, 5),
+            15,
+            [F1, F2],
+        ),  # general case
+        (
+            FakeMatchResultOneLabel(
+                0, 0, 4
+            ),  # Precision is 0 as there are no false postives, recall is 0 as there are no true positives -> corresponding f1-score is 0
+            FakeMatchResultOneLabel(
+                0, 7, 0
+            ),  # Recall is not defined -> corresponding f1-score is nan
+            15,
+            [0.0, np.nan],
+        ),
+    ],
+)
+def test_compute_per_label_f1score(
+    match_result_label_1, match_result_label_2, nb_pixels, expected_f1_score
+) -> None:
+    fake_match_result = FakeMatchResult(
+        match_result_label_1, match_result_label_2, nb_pixels=nb_pixels
+    )
+    f1_scores = compute_per_label_f1score(fake_match_result)
+
+    assert f1_scores == expected_f1_score, (
+        f"error computing precision  for {match_result_label_1=}, {match_result_label_2=}"
+    )
 
 
 if __name__ == "__main__":
