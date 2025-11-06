@@ -1,0 +1,24 @@
+on: [push, pull_request]
+
+jobs:
+  pylint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+        # Use the same Python version as your project
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint
+      - name: Run pylint on src
+        run: pylint ./src --fail-on=error  
+      
+      - name: Run pylint on tests     
+        run: pylint ./tests --fail-on=error  
+        # uses: github/super-linter@v4
+        # env:
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
