@@ -18,11 +18,8 @@ jobs:
         run: pip install poetry
         
       - name: Install dependencies
-        run: |
-          poetry export -f requirements.txt --output requirements.txt
-          pip install -r requirements.txt
+        run: poetry install --all-groups
           
-        
       - name: Run pylint on src
         run: run pylint ./src --exit-zero 
       
