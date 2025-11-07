@@ -19,12 +19,14 @@ jobs:
         
       - name: Install dependencies
         run: poetry install --all-groups
-          
-      - name: Run pylint on src
-        run: run pylint ./src --exit-zero 
+
+      - name: run tests
+        run: pytest
+      # - name: Run pylint on src
+        # run: run pylint ./src --exit-zero 
       
-      - name: Run pylint on tests     
-        run: run pylint ./tests --exit-zero # --fail-on=error  
+      # - name: Run pylint on tests     
+        # run: run pylint ./tests --exit-zero # --fail-on=error  
         # uses: github/super-linter@v4
         # env:
           # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
