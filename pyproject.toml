@@ -1,18 +1,18 @@
 [project]
-name = "u-net-pytorch"
+name = "torchsemanticsegmentation"
 version = "0.1.0"
-description = "implementation of the u-net semantic segmentation model using pytorch"
+description = "implementation of semantic segmentation models using pytorch"
 authors = [
     {name = "jbauthess",email = "authesse@gmail.com"}
 ]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.10,<=3.12.9"
+requires-python = ">=3.12,<3.15"
 dependencies = [
-    "torch (>=2.7.1,<3.0.0)",
-    "torchvision (>=0.22.1,<0.23.0)",
+    "torch (>=2.9.0,<3.0.0)",
+    "torchvision (>=0.24.0,<0.25.0)",
     "tensorboard (>=2.20.0,<3.0.0)",
-    "matplotlib (>=3.10.6,<4.0.0)"
+    "matplotlib (>=3.10.7,<4.0.0)"
 ]
 
 
@@ -20,30 +20,12 @@ dependencies = [
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[[tool.poetry.source]]
-name = "pytorch-gpu-source"
-url = "https://download.pytorch.org/whl/cu128"
-priority = "explicit"
-
-
-[tool.poetry.dependencies]
-torch = {source = "pytorch-gpu-source"}
-torchvision = {source = "pytorch-gpu-source"}
-
-[tool.poetry.group.debug.dependencies]
-jupyter = "^1.1.1"
-ipykernel = "^6.29.5"
-
-[tool.poetry.group.debug]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-coverage = "^7.9.2"
-pytest = "^8.4.1"
-
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-pylint = "^4.0.2"
-dill = ">=0.3.7"
+[dependency-groups]
+dev = [
+    "jupyter (>=1.1.1,<2.0.0)",
+    "ipykernel (>=7.1.0,<8.0.0)"
+]
+test = [
+    "coverage (>=7.11.1,<8.0.0)",
+    "pytest (>=8.4.2,<9.0.0)"
+]
