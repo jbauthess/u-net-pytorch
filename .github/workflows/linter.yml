@@ -18,7 +18,7 @@ jobs:
         run: pip install poetry
         
       - name: Install dependencies
-        run: poetry install --all-groups
+        run: poetry install  --no-interaction --no-root --all-groups
 
       - name: run tests
         run: pytest
