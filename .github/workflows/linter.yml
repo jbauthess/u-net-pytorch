@@ -21,7 +21,9 @@ jobs:
         run: poetry install  --no-interaction --no-root --all-groups
 
       - name: run tests
-        run: pytest
+        run: |
+          source .venv/bin/activate
+          pytest
       # - name: Run pylint on src
         # run: run pylint ./src --exit-zero 
       
