@@ -37,6 +37,3 @@ max-line-length = 100
 # disable checking of the .venv environment
 ignore = [".venv"]
 recursive = "y"
-# make only Errors / Fatals participate to pylint return value
-# this yield successful linting when there are only errors/refactor detected issues
-fail-on = E,F
