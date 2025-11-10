@@ -3,6 +3,9 @@ on: [push, pull_request]
 jobs:
   pylint:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: "$(pwd)/TorchSemanticSegmentation:$PYTHONPATH"
+    
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -22,6 +25,7 @@ jobs:
 
       - name: run tests
         run: |
+          ls $(pwd)/TorchSemanticSegmentation
           poetry run pytest
       # - name: Run pylint on src
         # run: run pylint ./src --exit-zero 
