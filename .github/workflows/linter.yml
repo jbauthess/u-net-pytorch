@@ -4,7 +4,7 @@ jobs:
   pylint:
     runs-on: ubuntu-latest
     env:
-      PYTHONPATH: "$(pwd)/TorchSemanticSegmentation:$PYTHONPATH"
+      PYTHONPATH: "/home/runner/work/TorchSemanticSegmentation/TorchSemanticSegmentation"
     
     steps:
       - uses: actions/checkout@v4
