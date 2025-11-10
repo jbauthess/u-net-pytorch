@@ -25,7 +25,7 @@ jobs:
 
       - name: run tests
         run: |
-          ls $(pwd)/TorchSemanticSegmentation
+          echo $PYTHONPATH
           poetry run pytest
       # - name: Run pylint on src
         # run: run pylint ./src --exit-zero 
