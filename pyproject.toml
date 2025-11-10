@@ -12,7 +12,8 @@ dependencies = [
     "torch (>=2.9.0,<3.0.0)",
     "torchvision (>=0.24.0,<0.25.0)",
     "tensorboard (>=2.20.0,<3.0.0)",
-    "matplotlib (>=3.10.7,<4.0.0)"
+    "matplotlib (>=3.10.7,<4.0.0)",
+    "pylint (>=4.0.2,<5.0.0)"
 ]
 
 

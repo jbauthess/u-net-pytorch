@@ -22,7 +22,12 @@ jobs:
         
       - name: Install dependencies
         run: poetry install  --no-interaction --no-root --all-groups
-
+        
+      - name: Run pylint
+        run: | 
+            poetry run pylint ./src --exit-zero 
+            poetry run pylint ./tests --exit-zero 
+        
       - name: run tests
         run: |
           echo $PYTHONPATH
