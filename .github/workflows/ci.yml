@@ -25,7 +25,7 @@ jobs:
         
       - name: Run pylint
         run: | 
-            poetry run pylint . --exit-zero
+            poetry run pylint .
         
       - name: run tests
         run: |
