@@ -13,7 +13,7 @@ from src.model.blocks import (
 from src.model.semantic_segmentation_model import SemanticSegmentationModel
 
 
-class UNetModel(SemanticSegmentationModel):
+class UNetModel(SemanticSegmentationModel):  # pylint: disable=too-many-instance-attributes
     """U-NET architecture"""
 
     def __init__(self, nb_in_channels: int, nb_labels: int, base_fm_number: int = 64):

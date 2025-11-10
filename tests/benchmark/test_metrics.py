@@ -18,6 +18,7 @@ from src.benchmark.metrics import (
 )
 
 
+@dataclass
 class FakeMatchMaps:
     """Mock of the MatchMaps class used for testing"""
 

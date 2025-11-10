@@ -24,7 +24,7 @@ class EarlyStoppingParams:
 
 @dataclass
 class HyperParameters:
-    """Hyper parameters used during the training step"""
+    """parameters governing the progression of the model training during the training step"""
 
     nb_epochs: int
     batch_size: int
@@ -32,41 +32,46 @@ class HyperParameters:
     early_stopping: EarlyStoppingParams | None = None
 
 
+@dataclass
+class TrainParameters:
+    """set of parameters used for parameterizing the training of a model"""
+
+    hyperparameters: HyperParameters
+    init_weights_path: Path | None  # initialization weights of the model
+    device: torch.device  # hardware used to make tensor computations
+
+
 def train(
-    device: torch.device,
     model: SemanticSegmentationModel,
-    init_weights_path: Path | None,
     train_dataset: Dataset,
     validation_dataset: Dataset,
-    hyperparameters: HyperParameters,
+    train_parameters: TrainParameters,
     model_save_path: Path,
 ) -> None:
     """Train a semantic segmentation model on a set of images
 
     Args:
-        device (torch.device): device used for computations
         model (SemanticSegmentationModel): the model to train
-        init_weights_path (Path | None): initialization weights of the model
         train_dataset (Dataset): the dataset on which the model is trained
         validation_dataset (Dataset): dataset used to evaluate model performance
                                       and stop the training if needed (Early Stopping)
-        hyperparameters (HyperParameters): hyper-parameters used to configure training loop
+        train_parameters (TrainParameters): parameters parameterizing the training process
         model_save_path (Path): the model will be saved here at the  end of the training
     """
     logger = getLogger()
 
     # initialize an iterable over the train set
-    train_loader = DataLoader(train_dataset, hyperparameters.batch_size, True)
+    train_loader = DataLoader(train_dataset, train_parameters.hyperparameters.batch_size, True)
 
     # initialize an iterable over the validation set
-    val_loader = DataLoader(validation_dataset, hyperparameters.batch_size, True)
+    val_loader = DataLoader(validation_dataset, train_parameters.hyperparameters.batch_size, True)
 
     # initialise early stopping
     early_stopping = None
-    if hyperparameters.early_stopping:
+    if train_parameters.hyperparameters.early_stopping:
         early_stopping = EarlyStopping(
-            hyperparameters.early_stopping.patience,
-            hyperparameters.early_stopping.min_delta,
+            train_parameters.hyperparameters.early_stopping.patience,
+            train_parameters.hyperparameters.early_stopping.min_delta,
         )
         logger.info(
             "Early stoppoing ACTIVATED : patience=%d, min_delta=%f",
@@ -91,17 +96,20 @@ def train(
     writer.flush()
 
     # init model layer weights
-    if init_weights_path is None:
+    if train_parameters.init_weights_path is None:
         # No provided weights -> init layer weights using default iniitialization strategy
         logger.info("Init model weights using the default initialization strategy")
         model.apply(init_weights)
     else:
-        logger.info("Init model weights using provided weights : %s", str(init_weights_path))
-        checkpoint = torch.load(init_weights_path, map_location="cpu")
+        logger.info(
+            "Init model weights using provided weights : %s",
+            str(train_parameters.init_weights_path),
+        )
+        checkpoint = torch.load(train_parameters.init_weights_path, map_location="cpu")
         model.load_state_dict(checkpoint)
 
     # move tensors to selected device
-    model = model.to(device, dtype=torch.float32)
+    model = model.to(train_parameters.device, dtype=torch.float32)
 
     # use cross-entropy loss
     logger.info(
@@ -115,15 +123,17 @@ def train(
 
     # use Adam optimizer
     # optimizer = optim.SGD(model.parameters(), lr=hyperparameters.lr, momentum=0.9)
-    optimizer = optim.Adam(model.parameters(), lr=hyperparameters.lr)
+    optimizer = optim.Adam(model.parameters(), lr=train_parameters.hyperparameters.lr)
 
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=5)
 
-    for epoch in range(hyperparameters.nb_epochs):
+    for epoch in range(train_parameters.hyperparameters.nb_epochs):
         ## --- train one epoch
         # set the module to the training mode
         model.train(True)
-        train_loss = train_one_epoch(device, model, loss_estimator, optimizer, train_loader)
+        train_loss = train_one_epoch(
+            train_parameters.device, model, loss_estimator, optimizer, train_loader
+        )
         model.train(False)
         ## ---
 
@@ -134,10 +144,10 @@ def train(
         for data in val_loader:
             images, masks = data
 
-            images = images.to(device)
+            images = images.to(train_parameters.device)
 
             # compute loss between model predicted mask and ground-truth mask
-            val_loss += compute_loss(device, model, loss_estimator, images, masks)
+            val_loss += compute_loss(train_parameters.device, model, loss_estimator, images, masks)
 
         val_loss /= len(val_loader)
 
@@ -158,8 +168,11 @@ def train(
         ##
 
         ## save model weights for the best observed val loss until now
-        info_str = f"Epoch [{epoch + 1}/{hyperparameters.nb_epochs}], Loss: {epoch_loss:.4f}, \
-                    Val Loss: {val_loss:.4f}"
+        info_str = (
+            f"Epoch [{epoch + 1}/{train_parameters.hyperparameters.nb_epochs}],"
+            f"Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}"
+        )
+
         logger.info(info_str)
 
         ## stop training if val loss does not improve

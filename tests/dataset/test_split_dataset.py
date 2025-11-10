@@ -14,8 +14,8 @@ from src.dataset.split_dataset import (
 
 
 # Mock data
-@pytest.fixture
-def mock_image_folder(tmp_path):
+@pytest.fixture(name="mock_image_folder")
+def get_mock_image_folder(tmp_path):
     """simulation of a folder containing the images of the dataset"""
     image_folder = tmp_path / "images"
     image_folder.mkdir()
@@ -24,8 +24,8 @@ def mock_image_folder(tmp_path):
     return image_folder
 
 
-@pytest.fixture
-def mock_mask_folder(tmp_path):
+@pytest.fixture(name="mock_mask_folder")
+def get_mock_mask_folder(tmp_path):
     """simulation of a folder containing the masks of the dataset"""
     mask_folder = tmp_path / "masks"
     mask_folder.mkdir()
