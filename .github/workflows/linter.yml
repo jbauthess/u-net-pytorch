@@ -22,8 +22,7 @@ jobs:
 
       - name: run tests
         run: |
-          source .venv/bin/activate
-          pytest
+          poetry run pytest
       # - name: Run pylint on src
         # run: run pylint ./src --exit-zero 
       
