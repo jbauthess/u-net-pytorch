@@ -54,7 +54,7 @@ def generate_report(match_result: MatchResult, metrics: List[TestMetrics]) -> No
             case TestMetrics.F1_SCORE_PER_LABEL:
                 logger.info("F1-SCORE PER LABEL")
                 for l, p in enumerate(compute_per_label_f1score(match_result)):
-                    logger.info("label %s: %%.3f", l, p)
+                    logger.info("label %s: %.3f", l, p)
 
             case TestMetrics.IOU_PER_LABEL:
                 logger.info("IOU PER LABEL")

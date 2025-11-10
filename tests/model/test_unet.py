@@ -1,17 +1,21 @@
+"""unit-tests for unet.py module"""
+
 import torch
 
 from src.model.unet import UNetModel
 
 
-def test_model_architecture() -> None:
+def test_model_architecture_output_size() -> None:
+    """test that the appication of the unet model yield
+    an output volume of the right size"""
     # build model predicting five classes on gray image
-    M = UNetModel(1, 5)
+    model = UNetModel(1, 5)
 
     # simulate an image
-    I = torch.ones((1, 1, 384, 384))
+    batch_image = torch.ones((1, 1, 384, 384))
 
     # run inference
-    x = M(I)
+    output = model(batch_image)
 
     # check output size is valid
-    assert x.size() == (1, 5, 384, 384)
+    assert output.size() == (1, 5, 384, 384)

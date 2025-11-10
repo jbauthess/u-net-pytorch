@@ -16,6 +16,7 @@ from src.dataset.split_dataset import (
 # Mock data
 @pytest.fixture
 def mock_image_folder(tmp_path):
+    """simulation of a folder containing the images of the dataset"""
     image_folder = tmp_path / "images"
     image_folder.mkdir()
     (image_folder / "img1.png").write_text("dummy image")
@@ -25,6 +26,7 @@ def mock_image_folder(tmp_path):
 
 @pytest.fixture
 def mock_mask_folder(tmp_path):
+    """simulation of a folder containing the masks of the dataset"""
     mask_folder = tmp_path / "masks"
     mask_folder.mkdir()
     (mask_folder / "img1_mask.png").write_text("dummy mask")
@@ -82,28 +84,36 @@ def test_split_datasets(tmp_path, mock_image_folder, mock_mask_folder):
         # Each destination folder should have 1 image and 1 mask as splitting rule enforces:
         # int(0.9 * 2) == 1 -> 1 image goes to the first folder. With it's mask : 2 files
         # int(0.1 * 2) == 0 -> 0 image goes to the last destination folder.
-        # AND : in all cases, remaining unused images are copuied to the last destination folder with associated mask (i.e. 1 image -> 2 files)
+        # AND : in all cases, remaining unused images are copuied to the last destination
+        # folder with associated mask (i.e. 1 image -> 2 files)
 
 
 # Test error handling
 def test_get_file_with_pattern_nonexistent_folder():
+    """test that an exception is raised when listing files in a non existent folder"""
     with pytest.raises(FileNotFoundError):
         get_file_with_pattern(Path("/nonexistent"), "*")
 
 
 def test_image_mask_path_generator_nonexistent_folder():
+    """test that an exception is raised when listing pairs (image, mask) in a non existent folder"""
     with pytest.raises(FileNotFoundError):
         list(image_mask_path_generator(Path("/nonexistent"), Path("/nonexistent"), ".png"))
 
 
 def test_split_datasets_invalid_ratios():
+    """test that splitting dataset is aborted when using invalid ratios"""
+    # split_ratios shall sum to 1.
     with pytest.raises(ValueError):
         split_datasets(Path("images"), Path("masks"), ".png", [Path("dest")], [0.5])
 
 
 def test_split_datasets_mismatched_lengths():
+    """test that the number of output folders shall be equal to the number of split ratios"""
     with pytest.raises(IndexError):
-        split_datasets(Path("images"), Path("masks"), ".png", [Path("dest1"), Path("dest2")], [0.5])
+        split_datasets(
+            Path("images"), Path("masks"), ".png", [Path("dest1"), Path("dest2")], [0.5, 0.2, 0.3]
+        )
 
 
 if __name__ == "__main__":
