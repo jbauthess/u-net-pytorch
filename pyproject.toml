@@ -39,4 +39,4 @@ ignore = [".venv"]
 recursive = "y"
 # make the linter returned value only report Errors / Fatals. 
 # this yield successful linting when there are only errors/refactor detected issues
-fail-on = [E,F]
+fail-on = ["E","F"]
