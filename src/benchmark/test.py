@@ -4,6 +4,7 @@ import logging
 from typing import List
 
 import torch
+from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
 
 from src.benchmark.match import compute_match_maps_one_label
@@ -48,10 +49,10 @@ def generate_mask_from_prediction(
 def test(
     device: torch.device,
     model: SemanticSegmentationModel,
-    test_dataset: Dataset,
+    test_dataset: Dataset[tuple[Tensor, Tensor]],
     metrics: List[TestMetrics] | None,
-    verbose=0,
-):
+    verbose: int = 0,
+) -> None:
     """run the model on a dataset and compute the evaluation report
 
     Args:
@@ -107,4 +108,5 @@ def test(
                 # display_multilabel_mask_tensor(resized_mask[0].to("cpu"))
 
         # generate evaluation report
-        generate_report(match_result, metrics)
+        if metrics:
+            generate_report(match_result, metrics)

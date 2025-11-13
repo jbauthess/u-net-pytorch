@@ -3,7 +3,8 @@
 - a colorimetric transformation is also applied on image
 """
 
-import torch
+from torch import Tensor
+from torch.utils.data import Dataset
 from torchvision import tv_tensors
 
 from src.dataset.data_augmentation.color_augmentation import (
@@ -16,7 +17,7 @@ from src.dataset.data_augmentation.spatial_augmentation import (
 )
 
 
-class AugmentedSemanticSegmentationDataset(torch.utils.data.Dataset):
+class AugmentedSemanticSegmentationDataset(Dataset[tuple[Tensor, Tensor]]):
     """Add spatial and colorimetric augmentation features to a semantic segmentation dataset"
 
     HOW TO USE:
@@ -44,20 +45,23 @@ class AugmentedSemanticSegmentationDataset(torch.utils.data.Dataset):
 
     def __init__(
         self,
-        dataset: torch.utils.data.Dataset,
+        dataset: Dataset[tuple[Tensor, Tensor]],
         spatial_params: SpatialAugmentationParams | None,
         colorimetric_params: ColorimetricAugmentationParams | None,
     ):
         self.dataset = dataset
         self.spatial_params = spatial_params
         self.colorimetric_params = colorimetric_params
-        self.spatial_aug = get_spatial_augmentation_pipeline(spatial_params)
-        self.colorimetric_aug = get_colorimetric_augmentation_pipeline(colorimetric_params)
+        if spatial_params:
+            self.spatial_aug = get_spatial_augmentation_pipeline(spatial_params)
 
-    def __len__(self):
+        if colorimetric_params:
+            self.colorimetric_aug = get_colorimetric_augmentation_pipeline(colorimetric_params)
+
+    def __len__(self) -> int:
         return len(self.dataset)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
         # get image and associated mask (tensors)
         image, mask = self.dataset[idx]
 

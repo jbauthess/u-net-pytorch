@@ -23,10 +23,10 @@ class EarlyStopping:
         self.patience = patience
         self.min_delta = min_delta
         self.counter = 0  #  Counts the number of epochs without improvement.
-        self.best_loss = None  # Best observed value of the monitored metric.
+        self.best_loss: float | None = None  # Best observed value of the monitored metric.
         self.early_stop = False  # Flag indicating whether to stop training.
 
-    def __call__(self, val_loss: float):
+    def __call__(self, val_loss: float) -> bool:
         """
         Updates the early stopping state based on the current validation loss.
 

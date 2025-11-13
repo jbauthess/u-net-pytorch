@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from random import randint
 from typing import List, Tuple
 
-import torch
+from torch import Tensor, zeros
 from torch.utils.data import Dataset
 
 
@@ -15,10 +15,10 @@ class Square:
     x: int
     y: int
     s: int
-    color: Tuple[int, int, int]
+    color: Tuple[int, ...]
 
 
-class SquareDataset(Dataset):
+class SquareDataset(Dataset[tuple[Tensor, Tensor]]):
     """this class generates a dataset of images containing a square at random location"""
 
     def __init__(
@@ -67,7 +67,7 @@ class SquareDataset(Dataset):
         """
         return self.nb_img
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor]:
         """
         Args:
             idx: Index of the sample to be retrieved.
@@ -78,8 +78,8 @@ class SquareDataset(Dataset):
             image mask contains the binary mask of pixels belonging to the square
         """
         square = self.squares[idx]
-        square_img = torch.zeros((self.nb_channels, self.img_height, self.img_width))
-        mask_img = torch.zeros((self.img_height, self.img_width))
+        square_img = zeros((self.nb_channels, self.img_height, self.img_width))
+        mask_img = zeros((self.img_height, self.img_width))
 
         for i, c in enumerate(square.color):
             square_img[i, square.y : square.y + square.s, square.x : square.x + square.s] = c

@@ -15,9 +15,9 @@ class MatchMaps:
     True Positives, False Positives and False Negatives
     """
 
-    tp: int  # True Positives
-    fp: int  # False Positives
-    fn: int  # False Negatives
+    tp: np.ndarray  # True Positives
+    fp: np.ndarray  # False Positives
+    fn: np.ndarray  # False Negatives
 
 
 def compute_match_maps_one_label(gt: np.ndarray, pred: np.ndarray, label: int) -> MatchMaps:

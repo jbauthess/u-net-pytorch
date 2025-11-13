@@ -77,4 +77,5 @@ class UNetModel(SemanticSegmentationModel):  # pylint: disable=too-many-instance
         x = self.up4(x, x0)
 
         # predicts probability maps, one per label
-        return self.out(x)
+        output: Tensor = self.out(x)
+        return output

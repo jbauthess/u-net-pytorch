@@ -15,7 +15,7 @@ from src.dataset.split_dataset import (
 
 # Mock data
 @pytest.fixture(name="mock_image_folder")
-def get_mock_image_folder(tmp_path):
+def get_mock_image_folder(tmp_path: Path) -> Path:
     """simulation of a folder containing the images of the dataset"""
     image_folder = tmp_path / "images"
     image_folder.mkdir()
@@ -25,7 +25,7 @@ def get_mock_image_folder(tmp_path):
 
 
 @pytest.fixture(name="mock_mask_folder")
-def get_mock_mask_folder(tmp_path):
+def get_mock_mask_folder(tmp_path: Path) -> Path:
     """simulation of a folder containing the masks of the dataset"""
     mask_folder = tmp_path / "masks"
     mask_folder.mkdir()
@@ -35,7 +35,7 @@ def get_mock_mask_folder(tmp_path):
 
 
 # Test PairedData
-def test_paired_data():
+def test_paired_data() -> None:
     """test PairedData instanciation"""
     image_path = Path("image.png")
     mask_path = Path("mask.png")
@@ -44,7 +44,7 @@ def test_paired_data():
     assert paired.mask_path == mask_path
 
 
-def test_get_file_with_pattern(mock_mask_folder):
+def test_get_file_with_pattern(mock_mask_folder: Path) -> None:
     """test listing files using get_file_with_pattern() method"""
     pattern = "img1*"
     result = get_file_with_pattern(mock_mask_folder, pattern)
@@ -52,7 +52,7 @@ def test_get_file_with_pattern(mock_mask_folder):
     assert result[0].name == "img1_mask.png"
 
 
-def test_image_mask_path_generator(mock_image_folder, mock_mask_folder):
+def test_image_mask_path_generator(mock_image_folder: Path, mock_mask_folder: Path) -> None:
     """Test image_mask_path_generator"""
     generator = image_mask_path_generator(mock_image_folder, mock_mask_folder, ".png")
     items = list(generator)
@@ -60,7 +60,7 @@ def test_image_mask_path_generator(mock_image_folder, mock_mask_folder):
     assert all(isinstance(item, PairedData) for item in items)
 
 
-def test_copy_items(tmp_path, mock_image_folder, mock_mask_folder):
+def test_copy_items(tmp_path: Path, mock_image_folder: Path, mock_mask_folder: Path) -> None:
     """Test copy_items"""
     dest_folder = tmp_path / "dest"
     items = [
@@ -71,7 +71,7 @@ def test_copy_items(tmp_path, mock_image_folder, mock_mask_folder):
     assert (dest_folder / "img1_mask.png").exists()
 
 
-def test_split_datasets(tmp_path, mock_image_folder, mock_mask_folder):
+def test_split_datasets(tmp_path: Path, mock_image_folder: Path, mock_mask_folder: Path) -> None:
     """Test split_datasets"""
     dest_folders = [tmp_path / f"dest_{i}" for i in range(2)]
     split_ratios = [0.9, 0.1]
@@ -89,26 +89,26 @@ def test_split_datasets(tmp_path, mock_image_folder, mock_mask_folder):
 
 
 # Test error handling
-def test_get_file_with_pattern_nonexistent_folder():
+def test_get_file_with_pattern_nonexistent_folder() -> None:
     """test that an exception is raised when listing files in a non existent folder"""
     with pytest.raises(FileNotFoundError):
         get_file_with_pattern(Path("/nonexistent"), "*")
 
 
-def test_image_mask_path_generator_nonexistent_folder():
+def test_image_mask_path_generator_nonexistent_folder() -> None:
     """test that an exception is raised when listing pairs (image, mask) in a non existent folder"""
     with pytest.raises(FileNotFoundError):
         list(image_mask_path_generator(Path("/nonexistent"), Path("/nonexistent"), ".png"))
 
 
-def test_split_datasets_invalid_ratios():
+def test_split_datasets_invalid_ratios() -> None:
     """test that splitting dataset is aborted when using invalid ratios"""
     # split_ratios shall sum to 1.
     with pytest.raises(ValueError):
         split_datasets(Path("images"), Path("masks"), ".png", [Path("dest")], [0.5])
 
 
-def test_split_datasets_mismatched_lengths():
+def test_split_datasets_mismatched_lengths() -> None:
     """test that the number of output folders shall be equal to the number of split ratios"""
     with pytest.raises(IndexError):
         split_datasets(

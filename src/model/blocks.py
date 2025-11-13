@@ -88,7 +88,7 @@ class UpsamplingBlock(Module):
         nb_out_channels (int): number of channels of the tensor after applying this block
     """
 
-    def __init__(self, nb_in_channels, nb_out_channels):
+    def __init__(self, nb_in_channels: int, nb_out_channels: int):
         super().__init__()
         # define block corresponding to the upsampling path
         # halve the channel dimension while up‑sampling
@@ -113,7 +113,10 @@ class UpsamplingBlock(Module):
         # )
 
         x = torch.cat([contractive_feature_map, x], dim=1)
-        return self.conv(x)
+
+        x = self.conv(x)
+
+        return x
 
 
 def create_upsampling_block(nb_in_channels: int, nb_out_channels: int) -> UpsamplingBlock:

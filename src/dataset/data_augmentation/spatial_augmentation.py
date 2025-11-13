@@ -1,7 +1,7 @@
 """spatial image augmentation pipeline"""
 
 from dataclasses import dataclass, field
-from typing import Tuple
+from typing import Sequence, Tuple
 
 from torchvision.transforms import v2
 
@@ -10,7 +10,7 @@ from torchvision.transforms import v2
 class ElasticTransformParams:
     """parameters associated to elastic image deformation"""
 
-    sigma: float = (4.0,)
+    sigma: float | Sequence[float] = 4.0
     alpha: float = 10
     p: float = 1.0
 
@@ -23,9 +23,7 @@ class SpatialAugmentationParams:
     p_rotate: float = 0.5
     p_flip: float = 0.5
 
-    elastic_transform: ElasticTransformParams = field(
-        default_factory=lambda: ElasticTransformParams
-    )
+    elastic_transform: ElasticTransformParams = field(default_factory=ElasticTransformParams)
     image_size: Tuple[int, int] = (256, 256)
 
 

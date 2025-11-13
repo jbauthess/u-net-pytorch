@@ -6,7 +6,9 @@ from pathlib import Path
 
 import torch
 import torchvision
-from torch import optim
+from torch import Tensor
+from torch.nn.modules.loss import _Loss
+from torch.optim import Adam, Optimizer, lr_scheduler
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
 
@@ -43,8 +45,8 @@ class TrainParameters:
 
 def train(
     model: SemanticSegmentationModel,
-    train_dataset: Dataset,
-    validation_dataset: Dataset,
+    train_dataset: Dataset[tuple[Tensor, Tensor]],
+    validation_dataset: Dataset[tuple[Tensor, Tensor]],
     train_parameters: TrainParameters,
     model_save_path: Path,
 ) -> None:
@@ -123,9 +125,9 @@ def train(
 
     # use Adam optimizer
     # optimizer = optim.SGD(model.parameters(), lr=hyperparameters.lr, momentum=0.9)
-    optimizer = optim.Adam(model.parameters(), lr=train_parameters.hyperparameters.lr)
+    optimizer = Adam(model.parameters(), lr=train_parameters.hyperparameters.lr)
 
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=5)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=5)
 
     for epoch in range(train_parameters.hyperparameters.nb_epochs):
         ## --- train one epoch
@@ -147,7 +149,9 @@ def train(
             images = images.to(train_parameters.device)
 
             # compute loss between model predicted mask and ground-truth mask
-            val_loss += compute_loss(train_parameters.device, model, loss_estimator, images, masks)
+            val_loss += compute_loss(
+                train_parameters.device, model, loss_estimator, images, masks
+            ).item()
 
         val_loss /= len(val_loader)
 
@@ -190,8 +194,12 @@ def train(
 
 
 def train_one_epoch(
-    device, model: SemanticSegmentationModel, loss_estimator, optimizer, train_loader
-):
+    device: torch.device,
+    model: SemanticSegmentationModel,
+    loss_estimator: _Loss,
+    optimizer: Optimizer,
+    train_loader: DataLoader[tuple[torch.Tensor, torch.Tensor]],
+) -> float:
     """train the model for one epoch"""
     running_loss = 0.0
     for _, data in enumerate(train_loader):
@@ -206,8 +214,13 @@ def train_one_epoch(
 
 
 def train_one_batch(
-    device, model: SemanticSegmentationModel, loss_estimator, optimizer, images, masks
-):
+    device: torch.device,
+    model: SemanticSegmentationModel,
+    loss_estimator: _Loss,
+    optimizer: Optimizer,
+    images: Tensor,
+    masks: Tensor,
+) -> float:
     """train the model on a batch of images"""
     # Zero the parameter gradients
     optimizer.zero_grad()
@@ -223,7 +236,13 @@ def train_one_batch(
     return running_loss
 
 
-def compute_loss(device, model: SemanticSegmentationModel, loss_estimator, images, masks):
+def compute_loss(
+    device: torch.device,
+    model: SemanticSegmentationModel,
+    loss_estimator: _Loss,
+    images: Tensor,
+    masks: Tensor,
+) -> Tensor:
     """Compute the model loss on a batch of images"""
     # Forward pass
     outputs = model(images)
@@ -248,11 +267,11 @@ def compute_loss(device, model: SemanticSegmentationModel, loss_estimator, image
         # to broadcast resized_masks correctly...
         resized_masks = resized_masks.unsqueeze(1)
 
-    loss = loss_estimator(outputs, resized_masks)
+    loss: Tensor = loss_estimator(outputs, resized_masks)
     return loss
 
 
-def init_weights(module):
+def init_weights(module: torch.nn.Module) -> None:
     """Function used to initialize the weights of the network different layers"""
     if isinstance(module, (torch.nn.Conv2d, torch.nn.ConvTranspose2d)):
         # He / Kaiming (good for ReLU)

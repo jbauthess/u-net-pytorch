@@ -2,11 +2,11 @@
 
 import unittest
 from dataclasses import dataclass
-from typing import List
 
 import numpy as np
 import pytest
 
+from src.benchmark.match import MatchMaps
 from src.benchmark.metrics import (
     MatchResult,
     MatchResultOneLabel,
@@ -19,26 +19,24 @@ from src.benchmark.metrics import (
 
 
 @dataclass
-class FakeMatchMaps:
+class FakeMatchMaps(MatchMaps):
     """Mock of the MatchMaps class used for testing"""
 
-    def __init__(self, tp, fp, fn):
-        self.tp = np.array(tp)
-        self.fp = np.array(fp)
-        self.fn = np.array(fn)
+    def __init__(self, tp: list[list[bool]], fp: list[list[bool]], fn: list[list[bool]]):
+        super().__init__(np.array(tp), np.array(fp), np.array(fn))
 
 
 class TestMatchResultOneLabel(unittest.TestCase):
     """Test MatchResultOneLabel class"""
 
-    def test_initialization(self):
+    def test_initialization(self) -> None:
         """Test initialization of MatchResultOneLabel"""
         label_result = MatchResultOneLabel()
         self.assertEqual(label_result.tp, 0)
         self.assertEqual(label_result.fp, 0)
         self.assertEqual(label_result.fn, 0)
 
-    def test_update(self):
+    def test_update(self) -> None:
         """Test updating MatchResultOneLabel with MatchMaps"""
         label_result = MatchResultOneLabel()
         match_maps = FakeMatchMaps(
@@ -55,13 +53,13 @@ class TestMatchResultOneLabel(unittest.TestCase):
 class TestMatchResult(unittest.TestCase):
     """Test MatchResult class"""
 
-    def test_initialization(self):
+    def test_initialization(self) -> None:
         """Test initialization of MatchResult"""
         match_result = MatchResult(nb_labels=3)
         self.assertEqual(len(match_result.match_per_label), 3)
         self.assertEqual(match_result.nb_pixels, 0)
 
-    def test_update_score_one_label(self):
+    def test_update_score_one_label(self) -> None:
         """Test updating score for one label"""
         match_result = MatchResult(nb_labels=3)
         match_maps = FakeMatchMaps(
@@ -74,13 +72,13 @@ class TestMatchResult(unittest.TestCase):
         self.assertEqual(match_result.match_per_label[1].fp, 2)
         self.assertEqual(match_result.match_per_label[1].fn, 1)
 
-    def test_update_nb_pixels(self):
+    def test_update_nb_pixels(self) -> None:
         """Test updating the number of pixels"""
         match_result = MatchResult(nb_labels=3)
         match_result.update_nb_pixels(100)
         self.assertEqual(match_result.nb_pixels, 100)
 
-    def test_invalid_label(self):
+    def test_invalid_label(self) -> None:
         """Test updating score with an invalid label"""
         match_result = MatchResult(nb_labels=3)
         match_maps = FakeMatchMaps(
@@ -95,7 +93,7 @@ class TestMatchResult(unittest.TestCase):
 class TestComputePixelwiseAccuracy(unittest.TestCase):
     """test computation of segmentation accuracy"""
 
-    def test_compute_accuracy(self):
+    def test_compute_accuracy(self) -> None:
         """Test computing pixelwise accuracy"""
         match_result = MatchResult(nb_labels=2)
         match_maps_1 = FakeMatchMaps(
@@ -114,7 +112,7 @@ class TestComputePixelwiseAccuracy(unittest.TestCase):
         accuracy = compute_pixelwise_accuracy(match_result)
         self.assertAlmostEqual(accuracy, 2 / 3)
 
-    def test_no_pixels_processed(self):
+    def test_no_pixels_processed(self) -> None:
         """Test computing accuracy with no pixels processed"""
         match_result = MatchResult(nb_labels=2)
         with self.assertRaises(ValueError):
@@ -170,7 +168,7 @@ def test_compute_precision(tp: int, fp: int, expected_precision: float) -> None:
 
 
 @dataclass
-class FakeMatchResultOneLabel:
+class FakeMatchResultOneLabel(MatchResultOneLabel):
     """Fake version of MatchResultOneLabel used for tests"""
 
     tp: int  # True Positives
@@ -178,14 +176,11 @@ class FakeMatchResultOneLabel:
     fn: int  # False Negatives
 
 
-class FakeMatchResult:
+class FakeMatchResult(MatchResult):
     """Matching results for all labels"""
 
-    match_per_label: List[MatchResultOneLabel]
-    nb_pixels: int  # total number of pixels processed
-
-    def __init__(self, *match_result_one_label: MatchResultOneLabel, nb_pixels: int):
-        self.match_per_label = match_result_one_label
+    def __init__(self, *match_result_one_label: FakeMatchResultOneLabel, nb_pixels: int):
+        self.match_per_label = list(match_result_one_label)
         self.nb_pixels = nb_pixels
 
 
@@ -196,7 +191,7 @@ F2 = 2 * (4 / (4 + 5) * (4 / (4 + 7))) / (4 / (4 + 5) + (4 / (4 + 7)))
 
 
 @pytest.mark.parametrize(
-    "match_result_label_1, match_result_label_2, nb_pixels, expected_f1_score",
+    "match_result_label_1, match_result_label_2, nb_pixels, expected_f1_scores",
     [
         (
             FakeMatchResultOneLabel(5, 6, 4),
@@ -216,7 +211,10 @@ F2 = 2 * (4 / (4 + 5) * (4 / (4 + 7))) / (4 / (4 + 5) + (4 / (4 + 7)))
     ],
 )
 def test_compute_per_label_f1score(
-    match_result_label_1, match_result_label_2, nb_pixels, expected_f1_score
+    match_result_label_1: FakeMatchResultOneLabel,
+    match_result_label_2: FakeMatchResultOneLabel,
+    nb_pixels: int,
+    expected_f1_scores: list[float],
 ) -> None:
     """
     test the computation of f1-scores from the matching results
@@ -227,7 +225,7 @@ def test_compute_per_label_f1score(
     )
     f1_scores = compute_per_label_f1score(fake_match_result)
 
-    assert f1_scores == expected_f1_score, (
+    assert f1_scores == expected_f1_scores, (
         f"error computing precision  for {match_result_label_1=}, {match_result_label_2=}"
     )
 

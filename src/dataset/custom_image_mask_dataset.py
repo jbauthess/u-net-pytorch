@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from PIL import Image
+from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision.transforms.functional import to_tensor
 
@@ -27,7 +28,7 @@ def find_image_mask_pairs(folder: Path) -> list[tuple[Path, Path]]:
     """
     # Separate images and masks
     images = []
-    mask_dict = {}  # Maps mask stem (e.g., "toto33_label") to mask path
+    mask_dict: dict[str, Path] = {}  # Maps mask stem (e.g., "toto33_label") to mask path
 
     for file in folder.iterdir():
         if not file.is_file():
@@ -54,7 +55,7 @@ def find_image_mask_pairs(folder: Path) -> list[tuple[Path, Path]]:
     return pairs
 
 
-class CustomImageMaskDataset(Dataset):
+class CustomImageMaskDataset(Dataset[tuple[Tensor, Tensor]]):
     """Dataset class for handling data stored as image and mask files in a folder"""
 
     def __init__(self, dataset_folder: Path):
@@ -84,10 +85,10 @@ class CustomImageMaskDataset(Dataset):
         # construct pairs (image file, mask file)
         self.image_mask_corresp = find_image_mask_pairs(dataset_folder)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.image_mask_corresp)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
         # Load image and mask
         img_path = os.path.join(self.dataset_folder, self.image_mask_corresp[idx][0])
         mask_path = os.path.join(self.dataset_folder, self.image_mask_corresp[idx][1])
@@ -106,6 +107,6 @@ class CustomImageMaskDataset(Dataset):
 
         # convert mask to tensor using channel first memory format
         # mask = from_numpy(mask).permute(2, 0, 1).to(dtype=float)
-        mask = torch.from_numpy(mask).to(dtype=torch.long)
+        torch_mask = torch.from_numpy(mask).to(dtype=torch.long)
 
-        return image, mask
+        return image, torch_mask

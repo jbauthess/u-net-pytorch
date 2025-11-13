@@ -23,6 +23,6 @@ class SemanticSegmentationModel(torch.nn.Module):
         """
         return self.nb_labels
 
-    def forward(self, x):  # added to deactivate pylint warning
+    def forward(self, x: torch.Tensor) -> torch.Tensor:  # added to deactivate pylint warning
         """Apply model on the input"""
         raise NotImplementedError("This method needs to be implemented in subclasses!")

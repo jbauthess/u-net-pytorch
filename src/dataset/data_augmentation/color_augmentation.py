@@ -38,15 +38,9 @@ class GaussianNoiseAugmentation:
 class ColorimetricAugmentationParams:
     """Parameters for colorimetric augmentations (applied only to the image)."""
 
-    brightness_augmentation: BrightnessAugmentation = field(
-        default_factory=lambda: BrightnessAugmentation
-    )
-    contrast_augmentation: ContrastAugmentation = field(
-        default_factory=lambda: ContrastAugmentation
-    )
-    noise_augmentation: GaussianNoiseAugmentation = field(
-        default_factory=lambda: GaussianNoiseAugmentation
-    )
+    brightness_augmentation: BrightnessAugmentation = field(default_factory=BrightnessAugmentation)
+    contrast_augmentation: ContrastAugmentation = field(default_factory=ContrastAugmentation)
+    noise_augmentation: GaussianNoiseAugmentation = field(default_factory=GaussianNoiseAugmentation)
 
 
 def get_colorimetric_augmentation_pipeline(params: ColorimetricAugmentationParams) -> v2.Compose:

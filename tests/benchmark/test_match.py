@@ -53,8 +53,13 @@ from src.benchmark.match import compute_match_maps_one_label
     ],
 )
 def test_compute_evaluation_maps_one_label(
-    gt, pred, label, expected_tp, expected_fn, expected_fp
-):
+    gt: np.ndarray,
+    pred: np.ndarray,
+    label: int,
+    expected_tp: np.ndarray,
+    expected_fn: np.ndarray,
+    expected_fp: np.ndarray,
+) -> None:
     """Validate that TP/FN/FP masks match the reference implementation."""
     result = compute_match_maps_one_label(gt, pred, label)
 
@@ -64,7 +69,7 @@ def test_compute_evaluation_maps_one_label(
     np.testing.assert_array_equal(result.fp, expected_fp, err_msg="FP mask mismatch")
 
 
-def test_invalid_inputs_raise():
+def test_invalid_inputs_raise() -> None:
     """Check that clearly malformed inputs raise a helpful exception."""
     # Mismatched shapes that cannot be broadcast.
     gt = np.zeros((2, 2))
