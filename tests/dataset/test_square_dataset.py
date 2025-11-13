@@ -14,9 +14,7 @@ def test_square_dataset_getitem() -> None:
     nb_img = 3
     square_size = 50
 
-    dataset = SquareDataset(
-        nb_channels, width, height, nb_img, square_size, square_size
-    )
+    dataset = SquareDataset(nb_channels, width, height, nb_img, square_size, square_size)
 
     # 3 squares should be generated internally with size square_size
     assert len(dataset.squares) == 3
@@ -25,7 +23,7 @@ def test_square_dataset_getitem() -> None:
         assert square.s == square_size
 
     # Does generated image contain a square of the right size?
-    for data in dataset:
+    for data in dataset:  # type: ignore   -> suppress error: "SquareDataset" has no attribute "__iter__" (not iterable)  [attr-defined]
         img, mask = data
         assert torch.count_nonzero(img) == square_size * square_size * nb_channels
         assert torch.count_nonzero(mask) == square_size * square_size
