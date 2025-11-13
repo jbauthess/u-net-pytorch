@@ -23,7 +23,9 @@ def test_square_dataset_getitem() -> None:
         assert square.s == square_size
 
     # Does generated image contain a square of the right size?
-    for data in dataset:  # type: ignore   -> suppress error: "SquareDataset" has no attribute "__iter__" (not iterable)  [attr-defined]
+    # NOTE : because insufficient type annotation in torch library
+    # -> mypy error: "SquareDataset" has no attribute "__iter__" (not iterable)  [attr-defined]
+    for data in dataset:  # type: ignore
         img, mask = data
         assert torch.count_nonzero(img) == square_size * square_size * nb_channels
         assert torch.count_nonzero(mask) == square_size * square_size
